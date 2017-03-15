@@ -1,0 +1,7 @@
+name: AWS EC2 config
+securityGroupName: 295JavaSecurityGroup
+region: US_WEST_2
+imageID: ami-5e63d13e
+keyName: cmpe295
+minInstanceCount: 1
+maxInstanceCount: 1

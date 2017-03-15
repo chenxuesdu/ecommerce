@@ -1,0 +1,10 @@
+name: ecommerceELB
+elbProtocol: HTTP
+instanceProtocol: HTTP
+instancePort: 80
+elbPort: 80
+securityGroupName:
+  - 295JavaSecurityGroup
+availablityZone:
+  - us-west-2a
+  - us-west-2b
