@@ -109,11 +109,22 @@ public class ELB {
                 securityGroupId.add(s.getGroupId());
             }
 
+            List<String> ec2InstanceVpcIds = ec2Instance.listInstanceVpcIds("running");
+            for (String s : ec2InstanceVpcIds)   System.out.println(s);
+
             elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds);
+            elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
+
+            //System.out.print(elbClients.getELBDNSName());
+
+            List<String> ec2RunningInstances = ec2Instance.listInstances("running");
+
+            elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
 
             elbClients.listELB();
 
 
+            //elbClients.deleteELB(elbClients.elbConfig.getName());
 
             //ec2Instance.getInstanceStatus();
 

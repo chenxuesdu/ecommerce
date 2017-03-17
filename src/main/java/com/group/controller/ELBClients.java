@@ -11,6 +11,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.*;
+//import com.amazonaws.services.elasticloadbalancingv2.model.CreateTargetGroupRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -49,6 +50,11 @@ public class ELBClients extends AWSClients{
         //listeners.add(new Listener("HTTPS", 443, 443));
 //        request.withAvailabilityZones(availabilityZone1,availabilityZone2);
         request.setListeners(listeners);
+
+        //CreateTargetGroupRequest targetGroupRequest = new CreateTargetGroupRequest()
+        //        .withName("my-targets").withPort(80).withProtocol("HTTP")
+        //          .withVpcId("vpc-3ac0fb5f");
+
 
         request.setSecurityGroups(securityGroups);
         request.setSubnets(ec2InstanceSubnetIds);
@@ -115,6 +121,16 @@ public class ELBClients extends AWSClients{
         printELBDescription(ELBDescriptionList);
     }
 
+    public List<String> getELBDNSName() {
+        DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers();
+        List<LoadBalancerDescription> ELBDescriptionList = response.getLoadBalancerDescriptions();
+        List<String> elbDNSNameList = new ArrayList<String>();
+
+        for(LoadBalancerDescription ELBDescription: ELBDescriptionList) {
+            elbDNSNameList.add(ELBDescription.getDNSName());
+        }
+        return elbDNSNameList;
+    }
     /*
      * http://docs.aws.amazon.com/cli/latest/reference/elb/describe-load-balancers.html
      */
@@ -174,7 +190,7 @@ public class ELBClients extends AWSClients{
         HealthCheck healthCheck = new HealthCheck();
         healthCheck.withHealthyThreshold(2);
         healthCheck.withInterval(30);
-        healthCheck.withTarget("TCP:80");
+        healthCheck.withTarget("TCP:22");
         healthCheck.withTimeout(5);
         healthCheck.withUnhealthyThreshold(2);
 
