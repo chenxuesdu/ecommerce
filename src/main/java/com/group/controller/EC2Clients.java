@@ -147,6 +147,7 @@ public class EC2Clients extends AWSClients{
                             System.out.println("Architecture: " + instance.getArchitecture());
                             System.out.println("SecurityGroups: " + instance.getSecurityGroups());
                             System.out.println("SubnetID: " + instance.getSubnetId());
+                            System.out.println("VpcId: " + instance.getVpcId());
 
 
                             List<Tag> tags = instance.getTags();
@@ -313,6 +314,36 @@ public class EC2Clients extends AWSClients{
         }
 
         return instanceSubnetIdList;
+    }
+
+    public List<String> listInstanceVpcIds(String instanceState) {
+
+        List<String> instanceVpcIdList = new ArrayList<String>();
+
+        DescribeInstancesResult response = AWSEC2Client.describeInstances();
+
+        if(response!=null && response.getReservations()!=null && !response.getReservations().isEmpty()) {
+            for(Reservation reservation: response.getReservations()) {
+                List<Instance> instances = reservation.getInstances();
+
+                if(instances!=null && !instances.isEmpty()) {
+                    for(Instance instance: instances) {
+                        if (instance.getState().getName().equals(instanceState)){
+                            instanceVpcIdList.add(instance.getVpcId());
+                            System.out.println("InstanceId: " + instance.getInstanceId());
+                            System.out.println("VpcID: " + instance.getVpcId());
+                        }
+                        System.out.println("-------");
+                    }
+                } else {
+                    System.out.println("No Instances VpcID Found!!!");
+                }
+            }
+        } else {
+            System.out.println("No Reservation List Found!!!");
+        }
+
+        return instanceVpcIdList;
     }
 
     private LaunchSpecification createLaunchSpecification(

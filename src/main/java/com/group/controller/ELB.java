@@ -57,17 +57,9 @@ public class ELB {
 
         public static void main(String[] args) {
 
-        /*
-         * The ProfileCredentialsProvider will return your [default]
-         * credential profile by reading from the credentials file located at
-         * (~/.aws/credentials).
-         */
             final Object PENDING_STATUS = "pending";
             String ec2ConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/ec2Config.yaml";
             String elbConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/elbConfig.yaml";
-
-
-            //AWSCredentials credentials = null;
 
             ELBClients elbClients = new ELBClients(elbConfigFilePath);
 
@@ -113,26 +105,23 @@ public class ELB {
             for (String s : ec2InstanceVpcIds)   System.out.println(s);
 
             elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds);
-            elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
 
-            //System.out.print(elbClients.getELBDNSName());
+            //Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
+            elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
 
             List<String> ec2RunningInstances = ec2Instance.listInstances("running");
 
             elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
 
+            elbClients.enableCrossZoneLoadBalancing();
+
             elbClients.listELB();
 
+            Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
+
+            System.out.print(instanceElbState);
 
             //elbClients.deleteELB(elbClients.elbConfig.getName());
-
-            //ec2Instance.getInstanceStatus();
-
-            /*
-            if (instanceId != null) {
-                ec2Instance.getInstanceStatus(instanceId);
-            }
-            */
 
         }
 

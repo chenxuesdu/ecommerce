@@ -5,7 +5,9 @@ package com.group.controller;
  */
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -48,7 +50,11 @@ public class ELBClients extends AWSClients{
         listeners.add(new Listener(elbConfig.getelbProtocol(), elbConfig.getelbPort(), elbConfig.getInstancePort()));
         //listeners.add(new Listener("HTTP", 80, 80));
         //listeners.add(new Listener("HTTPS", 443, 443));
-//        request.withAvailabilityZones(availabilityZone1,availabilityZone2);
+        System.out.print(elbConfig.getAvailablityZone());
+        request.withAvailabilityZones(elbConfig.getAvailablityZone());
+        //request.setSubnets(ec2InstanceSubnetIds);
+        /* either use Subnet or Availability Zone. */
+
         request.setListeners(listeners);
 
         //CreateTargetGroupRequest targetGroupRequest = new CreateTargetGroupRequest()
@@ -57,11 +63,32 @@ public class ELBClients extends AWSClients{
 
 
         request.setSecurityGroups(securityGroups);
-        request.setSubnets(ec2InstanceSubnetIds);
 
         CreateLoadBalancerResult response = AWSELBClient.createLoadBalancer(request);
 
         System.out.println("CreateELBResult: " + response);
+    }
+
+    /*
+     * http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/elasticloadbalancing/model/LoadBalancerAttributes.html
+     */
+
+    public void enableCrossZoneLoadBalancing() {
+        ModifyLoadBalancerAttributesRequest request = new ModifyLoadBalancerAttributesRequest();
+
+        CrossZoneLoadBalancing crossZoneLoadBalancing = new CrossZoneLoadBalancing();
+        crossZoneLoadBalancing.setEnabled(true);
+
+        LoadBalancerAttributes loadBalancerAttributes = new LoadBalancerAttributes();
+        loadBalancerAttributes.setCrossZoneLoadBalancing(crossZoneLoadBalancing);
+
+        request.withLoadBalancerAttributes(loadBalancerAttributes);
+        request.withLoadBalancerName(elbConfig.getName());
+
+        ModifyLoadBalancerAttributesResult response = AWSELBClient.modifyLoadBalancerAttributes(request);
+
+        System.out.println("EnableCrossZoneLoadBalancing result: " + response);
+
     }
 
     /*
@@ -76,7 +103,6 @@ public class ELBClients extends AWSClients{
 
         System.out.println("ApplySecurityGroupsToELBResult: " + response);
     }
-
     /*
      * http://docs.aws.amazon.com/cli/latest/reference/elb/create-load-balancer-listeners.html
      */
@@ -206,10 +232,12 @@ public class ELBClients extends AWSClients{
     /*
      * http://docs.aws.amazon.com/cli/latest/reference/elb/describe-instance-health.html
      */
-    public void getInstanceHealth(String ELBName, List<String> instanceIds) {
+    public Map<String, String> getInstanceHealth(String ELBName, List<String> instanceIds) {
         DescribeInstanceHealthRequest request = new DescribeInstanceHealthRequest();
         request.setLoadBalancerName(ELBName);
         request.setInstances(getELBInstanceList(instanceIds));
+
+        Map<String, String> instanceElbState = new HashMap<String, String>();
 
         DescribeInstanceHealthResult response = AWSELBClient.describeInstanceHealth(request);
 
@@ -220,7 +248,10 @@ public class ELBClients extends AWSClients{
             System.out.println("Description: " + instanceState.getDescription());
             System.out.println("State: " + instanceState.getState());
             System.out.println("ReasonCode: " + instanceState.getReasonCode());
+            instanceElbState.put(instanceState.getInstanceId(), instanceState.getState());
         }
+
+        return instanceElbState;
     }
 
     /*

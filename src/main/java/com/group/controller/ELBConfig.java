@@ -7,7 +7,7 @@ import java.util.*;
 public class ELBConfig {
     private String name;
     private List<String> securityGroupName;
-    private List<String> availablityZone;
+    private List<String> availabilityZone;
     private String elbProtocol;
     private String instanceProtocol;
     private Integer elbPort;
@@ -22,7 +22,7 @@ public class ELBConfig {
     }
 
     public List<String> getAvailablityZone() {
-        return availablityZone;
+        return availabilityZone;
     }
 
     public String getelbProtocol() {
@@ -50,7 +50,7 @@ public class ELBConfig {
     }
 
     public void setAvailablityZone(String[] availablityZone) {
-        this.availablityZone = Arrays.asList(availablityZone);
+        this.availabilityZone = Arrays.asList(availablityZone);
     }
 
     public void setelbrotocol(String elbProtocol) {
