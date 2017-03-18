@@ -1,0 +1,10 @@
+elbName: ecommerceELB
+configName: testLaunch
+asgroupName: testAS
+securityGroupName: 295JavaSecurityGroup
+policyName: Policy-up
+alarmName: Alarm-up
+region: US_WEST_2
+imageID: ami-4e6de42e
+availablityZone: us-west-2c
+instanceType: t2.micro
