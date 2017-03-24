@@ -19,12 +19,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
-public class ELBClients extends AWSClients{
+public class ELBv1Clients extends AWSClients{
 
     private AmazonElasticLoadBalancingClient AWSELBClient;
     public ELBConfig elbConfig;
 
-    public ELBClients(String configFilePath) {
+    public ELBv1Clients(String configFilePath) {
         super();
         AWSELBClient = new AmazonElasticLoadBalancingClient(getCredentials());
         Region usaRegion = Region.getRegion(Regions.US_WEST_2);
@@ -186,7 +186,7 @@ public class ELBClients extends AWSClients{
             System.out.println("\tHealthyThreshold: " + ELBDescription.getHealthCheck().getHealthyThreshold());
             System.out.println("\tTimeout: " + ELBDescription.getHealthCheck().getTimeout());
             System.out.println("\tUnhealthyThreshold: " + ELBDescription.getHealthCheck().getUnhealthyThreshold());
-            
+
             System.out.println("Instances: ");
             for(Instance instance: ELBDescription.getInstances()) {
                 System.out.println("\tInstanceId: " + instance.getInstanceId());
@@ -209,7 +209,7 @@ public class ELBClients extends AWSClients{
 
     /*
      * http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/elasticloadbalancing/model/HealthCheck.html
-     * 
+     *
      * http://docs.aws.amazon.com/cli/latest/reference/elb/configure-health-check.html
      */
     public void createOrUpdateHealthCheck(String ELBName) {
