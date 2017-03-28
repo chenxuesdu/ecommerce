@@ -4,15 +4,22 @@ package com.group.controller;
  * Created by wtang on 3/12/17.
  */
 import java.io.File;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Date;
+import java.sql.Timestamp;
+import java.time.LocalTime;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import com.amazonaws.services.cloudwatch.model.*;
 import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClient;
-//import com.amazonaws.services.elasticloadbalancing.model.*;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateTargetGroupRequest;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateTargetGroupResult;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateLoadBalancerRequest;
@@ -23,10 +30,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.joda.time.DateTime;
 
 public class ELBv2Clients extends AWSClients{
 
     private AmazonElasticLoadBalancingClient AWSELBClient;
+    private AmazonCloudWatchClient AWSCloudWatchClient;
     public ELBConfig elbConfig;
     public String elbDNSName;
     public String elbVpcId;
@@ -40,6 +49,8 @@ public class ELBv2Clients extends AWSClients{
         AWSELBClient = new AmazonElasticLoadBalancingClient(getCredentials());
         Region usaRegion = Region.getRegion(Regions.US_WEST_2);
         AWSELBClient.setRegion(usaRegion);
+        AWSCloudWatchClient = new AmazonCloudWatchClient(getCredentials());
+        AWSCloudWatchClient.setRegion(usaRegion);
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -54,7 +65,7 @@ public class ELBv2Clients extends AWSClients{
     /*
      * http://docs.aws.amazon.com/cli/latest/reference/elb/create-load-balancer.html
      */
-    public void createELB(String elbName, List<String> securityGroups, List<String> ec2InstanceSubnetIds, List<String> ec2RunningInstances) {
+    public String createELB(String elbName, List<String> securityGroups, List<String> ec2InstanceSubnetIds, List<String> ec2RunningInstances) {
         CreateLoadBalancerRequest request = new CreateLoadBalancerRequest()
                                                 .withName(elbName)
                                                 .withSubnets(ec2InstanceSubnetIds)
@@ -75,6 +86,7 @@ public class ELBv2Clients extends AWSClients{
         createELBRule(elbTargetGroupArn, elbListenerArn, "/db/*");
 
         System.out.println("CreateELBResult: " + response.toString());
+        return response.getLoadBalancers().get(0).getState().toString();
     }
 
     /*
@@ -156,5 +168,137 @@ public class ELBv2Clients extends AWSClients{
 
         System.out.println("DeleteLoadBalancerResult: " + response);
     }
+
+
+    public void listELBMetrics(String ELBArn, String ELBTargetGroup, List<String> metricList) {
+
+        String pattern = ".*(loadbalancer/)(.*)";
+        Pattern reg = Pattern.compile(pattern);
+        String elbFilter = "";
+
+        Matcher m = reg.matcher(ELBArn);
+        if (m.find()) {
+            elbFilter = m.group(2);
+        } else {
+            System.out.println("Incorrect ELB Arn");
+        }
+
+        pattern = ".*(targetgroup/.*)";
+        reg = Pattern.compile(pattern);
+        String tgFilter = "";
+
+        m = reg.matcher(ELBTargetGroup);
+        if (m.find()) {
+            tgFilter = m.group(1);
+        } else {
+            System.out.println("Incorrect Target group Arn");
+        }
+
+        DimensionFilter dimensionFilterTg = new DimensionFilter().withName("TargetGroup").withValue(tgFilter);
+        DimensionFilter dimensionFilterLb = new DimensionFilter().withName("LoadBalancer").withValue(elbFilter);
+
+        List<DimensionFilter> dimensionFilterList = new ArrayList<>();
+        dimensionFilterList.add(dimensionFilterTg);
+        dimensionFilterList.add(dimensionFilterLb);
+
+        ListMetricsRequest listMetricsRequest = new ListMetricsRequest()
+                .withNamespace("AWS/ApplicationELB")
+                .withDimensions(dimensionFilterList);
+
+        for (String metricitem : metricList) {
+            listMetricsRequest.setMetricName(metricitem);
+
+            ListMetricsResult response;
+
+            do {
+                response = AWSCloudWatchClient.listMetrics(listMetricsRequest);
+
+                if (response != null && response.getMetrics().size() > 0) {
+                    for (Metric metric : response.getMetrics()) {
+                        System.out.println(metric.getMetricName() + "(" + metric.getNamespace() + ")");
+
+                        for (Dimension dimension : metric.getDimensions()) {
+                            System.out.println(" " + dimension.getName() + ": " + dimension.getValue());
+                        }
+                    }
+                } else {
+                    System.out.print("No ELB metrics found.");
+                }
+
+                listMetricsRequest.setNextToken(response.getNextToken());
+            } while (response.getNextToken() != null);
+        }
+    }
+
+    public void getELBMetricStats(String ELBArn, String ELBTargetGroup, String metricName) {
+
+        String pattern = ".*(loadbalancer/)(.*)";
+        Pattern reg = Pattern.compile(pattern);
+        String elbFilter = "";
+
+        Matcher m = reg.matcher(ELBArn);
+        if (m.find()) {
+            elbFilter = m.group(2);
+        } else {
+            System.out.println("Incorrect ELB Arn");
+        }
+
+        pattern = ".*(targetgroup/.*)";
+        reg = Pattern.compile(pattern);
+        String tgFilter = "";
+
+        m = reg.matcher(ELBTargetGroup);
+        if (m.find()) {
+            tgFilter = m.group(1);
+        } else {
+            System.out.println("Incorrect Target group Arn");
+        }
+
+        List<Dimension> dimensionList = new ArrayList<>();
+
+
+
+        GetMetricStatisticsRequest request = new GetMetricStatisticsRequest();
+        Dimension dimension = new Dimension();
+        dimension.setName("LoadBalancer");
+        dimension.setValue(elbFilter);
+        dimensionList.add(dimension);
+
+        dimension = new Dimension();
+        dimension.setName("TargetGroup");
+        dimension.setValue(tgFilter);
+        dimensionList.add(dimension);
+
+        request.setDimensions(dimensionList);
+
+        Date endTime =  new Date();
+        Date startTime =  new DateTime(endTime).minusMinutes(5).toDate();
+
+        request.setMetricName(metricName);
+        request.setStartTime(startTime);
+        request.setEndTime(endTime);
+        request.setPeriod(60);
+        request.setNamespace("AWS/ApplicationELB");
+        List<String> statsList = new ArrayList<String>();
+        statsList.add("Sum");
+        statsList.add("Average");
+        statsList.add("Maximum");
+        statsList.add("Minimum");
+
+        request.setStatistics(statsList);
+
+        GetMetricStatisticsResult result = AWSCloudWatchClient.getMetricStatistics(request);
+
+        if (result.getDatapoints().size() > 0) {
+            for (Datapoint point : result.getDatapoints()) {
+                System.out.println(metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
+                System.out.println(metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
+                System.out.println(metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
+                System.out.println(metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
+            }
+        }
+
+    }
+
 
 }

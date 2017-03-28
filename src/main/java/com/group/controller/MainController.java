@@ -3,7 +3,6 @@ package com.group.controller;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +20,7 @@ public class MainController {
 		String ec2ConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/ec2Config.yaml";
 		String elbConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/elbConfig.yaml";
 
-		ELBClients elbClients = new ELBClients(elbConfigFilePath);
+		ELBv2Clients elbClients = new ELBv2Clients(elbConfigFilePath);
 
 		EC2Clients ec2Instance = new EC2Clients(ec2ConfigFilePath);
 
@@ -65,18 +64,18 @@ public class MainController {
 		List<String> ec2InstanceVpcIds = ec2Instance.listInstanceVpcIds("running");
 		for (String s : ec2InstanceVpcIds)   System.out.println(s);
 
-		elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds);
-
-		//Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
-		elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
-
 		List<String> ec2RunningInstances = ec2Instance.listInstances("running");
 
-		elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
+		elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds, ec2RunningInstances);
 
-		elbClients.enableCrossZoneLoadBalancing();
+		//Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
+		//elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
 
-		elbClients.listELB();
+		//elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
+
+		//elbClients.enableCrossZoneLoadBalancing();
+
+		//elbClients.listELB();
 
 		try {
 			System.out.println("Sleep 20 seconds waiting for all instances joining ELB ......");
@@ -85,11 +84,11 @@ public class MainController {
 			System.out.print(e);
 		}
 
-		Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
+		//Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
 
-		System.out.print(instanceElbState);
+		//System.out.print(instanceElbState);
 
-		return instanceElbState;
+		return null;
 	}
 
 }

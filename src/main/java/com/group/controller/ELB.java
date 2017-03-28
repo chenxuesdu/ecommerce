@@ -61,7 +61,7 @@ public class ELB {
             String ec2ConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/ec2Config.yaml";
             String elbConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/elbConfig.yaml";
 
-            ELBClients elbClients = new ELBClients(elbConfigFilePath);
+            ELBv2Clients elbClients = new ELBv2Clients(elbConfigFilePath);
 
             EC2Clients ec2Instance = new EC2Clients(ec2ConfigFilePath);
 
@@ -87,7 +87,7 @@ public class ELB {
             }
 
             try {
-                Thread.sleep(20000);    // Wait until all ec2 instances are up.
+                Thread.sleep(1000);    // Wait until all ec2 instances are up.
             } catch (Exception e) {
                 System.out.print(e);
             }
@@ -104,22 +104,44 @@ public class ELB {
             List<String> ec2InstanceVpcIds = ec2Instance.listInstanceVpcIds("running");
             for (String s : ec2InstanceVpcIds)   System.out.println(s);
 
-            elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds);
-
-            //Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
-            elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
-
             List<String> ec2RunningInstances = ec2Instance.listInstances("running");
 
-            elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
+            String elbState = elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds, ec2RunningInstances);
 
-            elbClients.enableCrossZoneLoadBalancing();
+            System.out.println(elbState);
 
-            elbClients.listELB();
+            List<String> metricList = new ArrayList<>();
+            metricList.add("ActiveConnectionCount");
+            metricList.add("HealthyHostCount");
+            metricList.add("HTTPCode_ELB_4XX_Count");
+            metricList.add("HTTPCode_ELB_5XX_Count");
+            metricList.add("HTTPCode_Target_2XX_Count");
+            metricList.add("HTTPCode_Target_3XX_Count");
+            metricList.add("HTTPCode_Target_4XX_Count");
+            metricList.add("HTTPCode_Target_5XX_Count");
+            metricList.add("RequestCount");
+            metricList.add("TargetResponseTime");
+            metricList.add("UnHealthyHostCount");
+            metricList.add("ProcessedBytes");
 
-            Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
+            //elbClients.listELBMetrics(elbClients.elbArn, elbClients.elbTargetGroupArn, metricList);
+            String metricName = "UnHealthyHostCount";
+            elbClients.getELBMetricStats(elbClients.elbArn, elbClients.elbTargetGroupArn, metricName);
 
-            System.out.print(instanceElbState);
+            //Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
+            //elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
+
+
+
+            //elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
+
+            //elbClients.enableCrossZoneLoadBalancing();
+
+            //elbClients.listELB();
+
+            //Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
+
+            //System.out.print(instanceElbState);
 
             //elbClients.deleteELB(elbClients.elbConfig.getName());
 

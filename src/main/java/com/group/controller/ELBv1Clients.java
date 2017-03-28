@@ -48,8 +48,7 @@ public class ELBv1Clients extends AWSClients{
         request.setLoadBalancerName(elbName);
         List<Listener> listeners = new ArrayList<Listener>();
         listeners.add(new Listener(elbConfig.getelbProtocol(), elbConfig.getelbPort(), elbConfig.getInstancePort()));
-        //listeners.add(new Listener("HTTP", 80, 80));
-        //listeners.add(new Listener("HTTPS", 443, 443));
+
         System.out.print(elbConfig.getAvailablityZone());
         request.withAvailabilityZones(elbConfig.getAvailablityZone());
         //request.setSubnets(ec2InstanceSubnetIds);
