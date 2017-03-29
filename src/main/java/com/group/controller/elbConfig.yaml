@@ -3,7 +3,9 @@ elbProtocol: HTTP
 instanceProtocol: HTTP
 instancePort: 80
 elbPort: 80
-targetGroupName: 295JavaTargetGroup
+targetGroupName:
+  - 295JavaTargetGroupA
+  - 295JavaTargetGroupB
 securityGroupName:
   - 295JavaSecurityGroup
 availablityZone:

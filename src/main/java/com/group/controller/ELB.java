@@ -57,7 +57,11 @@ public class ELB {
 
         public static void main(String[] args) {
 
-            final Object PENDING_STATUS = "pending";
+            final String PENDING_STATUS = "pending";
+            final String ACTIVE_STATUS = "active";
+            final String RUNNING_STATUS = "running";
+
+
             String ec2ConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/ec2Config.yaml";
             String elbConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/elbConfig.yaml";
 
@@ -87,28 +91,37 @@ public class ELB {
             }
 
             try {
-                Thread.sleep(1000);    // Wait until all ec2 instances are up.
+                Thread.sleep(20000);    // Wait until all ec2 instances are up.
             } catch (Exception e) {
                 System.out.print(e);
             }
 
-            List<String> ec2InstanceSubnetIds = ec2Instance.listInstanceSubnetIds("running");
-            for (String s : ec2InstanceSubnetIds)   System.out.println(s);
+            List<String> ec2InstanceSubnetIds = ec2Instance.listInstanceSubnetIds(RUNNING_STATUS);
+            for (String s : ec2InstanceSubnetIds) System.out.println(s);
 
             List<SecurityGroup> securityGroups = ec2Instance.getSecurityGroupId(elbClients.elbConfig.getSecurityGroupName());
-            List<String> securityGroupId = new ArrayList<String>();
+            List<String> securityGroupId = new ArrayList<>();
             for (SecurityGroup s : securityGroups) {
                 securityGroupId.add(s.getGroupId());
             }
 
-            List<String> ec2InstanceVpcIds = ec2Instance.listInstanceVpcIds("running");
-            for (String s : ec2InstanceVpcIds)   System.out.println(s);
+            List<String> ec2InstanceVpcIds = ec2Instance.listInstanceVpcIds(RUNNING_STATUS);
+            for (String s : ec2InstanceVpcIds) System.out.println(s);
 
-            List<String> ec2RunningInstances = ec2Instance.listInstances("running");
+            List<String> ec2RunningInstances = ec2Instance.listInstances(RUNNING_STATUS);
 
             String elbState = elbClients.createELB(elbClients.elbConfig.getName(), securityGroupId, ec2InstanceSubnetIds, ec2RunningInstances);
 
-            System.out.println(elbState);
+            while (!elbState.equals(ACTIVE_STATUS)){
+                try {
+                    System.out.println("Sleep 20 seconds waiting ELB becoming Active.");
+                    Thread.sleep(20000);    // Wait until all ec2 instances are up.
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+                elbState = elbClients.getELBState(elbClients.elbArn);
+                System.out.println(elbState);
+            }
 
             List<String> metricList = new ArrayList<>();
             metricList.add("ActiveConnectionCount");
@@ -124,26 +137,16 @@ public class ELB {
             metricList.add("UnHealthyHostCount");
             metricList.add("ProcessedBytes");
 
-            //elbClients.listELBMetrics(elbClients.elbArn, elbClients.elbTargetGroupArn, metricList);
+            for (String tn : elbClients.elbTargetGroupArn) {
+                elbClients.listELBMetrics(elbClients.elbArn, tn, metricList);
+            }
+
             String metricName = "UnHealthyHostCount";
-            elbClients.getELBMetricStats(elbClients.elbArn, elbClients.elbTargetGroupArn, metricName);
+            for (String tn : elbClients.elbTargetGroupArn) {
+                elbClients.getELBMetricStats(elbClients.elbArn, tn, metricName);
+            }
 
-            //Since there is no web service on ec2 instance yet, just health check @ tcp port 22.
-            //elbClients.createOrUpdateHealthCheck(elbClients.elbConfig.getName());
-
-
-
-            //elbClients.registerInstancesToELB(elbClients.elbConfig.getName(), ec2RunningInstances);
-
-            //elbClients.enableCrossZoneLoadBalancing();
-
-            //elbClients.listELB();
-
-            //Map<String, String> instanceElbState = elbClients.getInstanceHealth(elbClients.elbConfig.getName(), ec2List);
-
-            //System.out.print(instanceElbState);
-
-            //elbClients.deleteELB(elbClients.elbConfig.getName());
+            System.out.println(elbClients.getELBDNSName(elbClients.elbArn));
 
         }
 

@@ -12,7 +12,7 @@ public class ELBConfig {
     private String instanceProtocol;
     private Integer elbPort;
     private Integer instancePort;
-    private String targetGroupName;
+    private List<String> targetGroupName;
 
     public String getName() {
         return name;
@@ -42,7 +42,7 @@ public class ELBConfig {
         return instancePort;
     }
 
-    public String getTargetGroupName() { return targetGroupName; }
+    public List<String> getTargetGroupName() { return targetGroupName; }
 
     public void setName(String name) {
         this.name = name;
@@ -72,5 +72,5 @@ public class ELBConfig {
         this.instancePort = instancePort;
     }
 
-    public void setTargetGroupName(String targetGroupName) { this.targetGroupName = targetGroupName;}
+    public void setTargetGroupName(List<String> targetGroupName) { this.targetGroupName = targetGroupName;}
 }
