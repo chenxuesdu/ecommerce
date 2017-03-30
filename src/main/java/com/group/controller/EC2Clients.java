@@ -44,7 +44,9 @@ public class EC2Clients extends AWSClients{
         }
     }
 
-    public String createEC2Instance(String imageId, InstanceType instanceType, int minInstanceCount, int maxInstanceCount, String keyPairName, String securityGroupName) {
+    public String createEC2Instance(String imageId, InstanceType instanceType, int minInstanceCount, int maxInstanceCount, String keyPairName, String securityGroupId, String subnetId) {
+
+        /* get the subnetID of VPC, and assign to the EC2 instances. */
 
         RunInstancesRequest request = new RunInstancesRequest();
 
@@ -52,12 +54,14 @@ public class EC2Clients extends AWSClients{
         request.setInstanceType(instanceType);
 
         request.setKeyName(keyPairName);
-        List<String> securityGroups = new ArrayList<String>();
-        securityGroups.add(securityGroupName);
-        request.setSecurityGroups(securityGroups);
+        List<String> securityGroupsId = new ArrayList<String>();
+        securityGroupsId.add(securityGroupId);
+        //request.setSecurityGroups(securityGroups);
+        request.setSecurityGroupIds(securityGroupsId);
 
         request.setMinCount(minInstanceCount);
         request.setMaxCount(maxInstanceCount);
+        request.setSubnetId(subnetId);
 
         RunInstancesResult response = AWSEC2Client.runInstances(request);
 
@@ -344,6 +348,17 @@ public class EC2Clients extends AWSClients{
         }
 
         return instanceVpcIdList;
+    }
+
+    public List<String> getSubnetId() {
+        DescribeSubnetsResult subnetsResult = AWSEC2Client.describeSubnets();
+
+        List<String> res = new ArrayList<>();
+        for (int i = 0; i < subnetsResult.getSubnets().size(); i++) {
+            res.add(subnetsResult.getSubnets().get(i).getSubnetId());
+        }
+
+        return res;
     }
 
     private LaunchSpecification createLaunchSpecification(

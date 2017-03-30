@@ -6,6 +6,7 @@ import com.amazonaws.services.ec2.model.InstanceType;
 public class EC2Config {
     private String name;
     private String securityGroupName;
+    private String securityGroupId;
     private String region;
     private String imageID;
     private InstanceType instanceType = InstanceType.T2Micro;
@@ -20,6 +21,11 @@ public class EC2Config {
     public String getSecurityGroupName() {
         return securityGroupName;
     }
+
+    public String getSecurityGroupId() {
+        return securityGroupId;
+    }
+
 
     public String getRegion() {
         return region;
@@ -52,6 +58,11 @@ public class EC2Config {
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
     }
+
+    public void setSecurityGroupId(String securityGroupId) {
+        this.securityGroupId = securityGroupId;
+    }
+
 
     public void setRegion(String region) {
         this.region = region;

@@ -1,5 +1,5 @@
 name: AWS EC2 config
-securityGroupName: 295JavaSecurityGroup
+securityGroupId: sg-81d7f5f9
 region: US_WEST_2
 imageID: ami-5e63d13e
 keyName: cmpe295

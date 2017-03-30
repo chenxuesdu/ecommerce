@@ -18,7 +18,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.*;
-import com.amazonaws.services.elasticloadbalancing.model.*;
+//import com.amazonaws.services.elasticloadbalancing.model.*;
 import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateTargetGroupRequest;
@@ -83,10 +83,17 @@ public class ELBv2Clients extends AWSClients{
 
         createELBTargetGroup(elbConfig.getTargetGroupName());
 
+        int half = ec2RunningInstances.size()/2;
+
         List<String> ec2InstanceList1 = new ArrayList<>();
-        ec2InstanceList1.add(ec2RunningInstances.get(0));
+        for (int i = 0; i < half ; i++) {
+            ec2InstanceList1.add(ec2RunningInstances.get(i));
+        }
+
         List<String> ec2InstanceList2 = new ArrayList<>();
-        ec2InstanceList2.add(ec2RunningInstances.get(1));
+        for (int i = half; i < ec2RunningInstances.size(); i++) {
+            ec2InstanceList2.add(ec2RunningInstances.get(i));
+        }
 
         registerELBTargetGroup(elbTargetGroupArn.get(0), ec2InstanceList1);
         registerELBTargetGroup(elbTargetGroupArn.get(1), ec2InstanceList2);

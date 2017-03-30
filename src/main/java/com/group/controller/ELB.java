@@ -1,4 +1,5 @@
 package com.group.controller;
+import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 
 import java.util.*;
@@ -60,6 +61,7 @@ public class ELB {
             final String PENDING_STATUS = "pending";
             final String ACTIVE_STATUS = "active";
             final String RUNNING_STATUS = "running";
+            final String STOPPED_STATUS = "stopped";
 
 
             String ec2ConfigFilePath = "/Users/wtang/Documents/295/ecommerce/src/main/java/com/group/controller/ec2Config.yaml";
@@ -69,26 +71,40 @@ public class ELB {
 
             EC2Clients ec2Instance = new EC2Clients(ec2ConfigFilePath);
 
-            /*
-            String instanceId = ec2Instance.createEC2Instance(
-                    ec2Instance.ec2Config.getImageID(),
-                    ec2Instance.ec2Config.getInstanceType(),
-                    ec2Instance.ec2Config.getMinInstanceCount(),
-                    ec2Instance.ec2Config.getMaxInstanceCount(),
-                    ec2Instance.ec2Config.getKeyName(),
-                    ec2Instance.ec2Config.getSecurityGroupName());
+            List<String> subnetIdList = ec2Instance.getSubnetId();
 
-            System.out.println("The newly created ec2 instance has an ID: " + instanceId);
-            System.out.println(ec2Instance.getInstanceId());
-            System.out.println("**********************");
-            */
+            for (int i = 0; i < 4; i++) {
+                String instanceId = ec2Instance.createEC2Instance(
+                        ec2Instance.ec2Config.getImageID(),
+                        ec2Instance.ec2Config.getInstanceType(),
+                        ec2Instance.ec2Config.getMinInstanceCount(),
+                        ec2Instance.ec2Config.getMaxInstanceCount(),
+                        ec2Instance.ec2Config.getKeyName(),
+                        ec2Instance.ec2Config.getSecurityGroupId(),
+                        subnetIdList.get(i%2));
 
-            List<String> ec2List = ec2Instance.listInstances("stopped");
+                System.out.println("The newly created ec2 instance has an ID: " + instanceId);
+                System.out.println(ec2Instance.getInstanceId());
+                System.out.println("**********************");
+            }
+
+            try {
+                System.out.println("Sleep 20 seconds starting all EC2 instances.");
+                Thread.sleep(20000);    // Wait until all ec2 instances are up.
+            } catch (Exception e) {
+                System.out.print(e);
+            }
+
+            List<String> ec2List = ec2Instance.listInstances(RUNNING_STATUS);
+
+
+            //List<String> ec2List = ec2Instance.listInstances(STOPPED_STATUS);
 
             for (String inst : ec2List) {
                 ec2Instance.startInstance(inst);
                 //ec2Instance.stopInstance(inst);
             }
+
 
             try {
                 Thread.sleep(20000);    // Wait until all ec2 instances are up.
@@ -137,8 +153,17 @@ public class ELB {
             metricList.add("UnHealthyHostCount");
             metricList.add("ProcessedBytes");
 
+            /*
             for (String tn : elbClients.elbTargetGroupArn) {
                 elbClients.listELBMetrics(elbClients.elbArn, tn, metricList);
+            }
+            */
+
+            try {
+                System.out.println("Sleep 60 seconds collecting metric stats.");
+                Thread.sleep(60000);    // Wait until all ec2 instances are up.
+            } catch (Exception e) {
+                System.out.println(e);
             }
 
             String metricName = "UnHealthyHostCount";
