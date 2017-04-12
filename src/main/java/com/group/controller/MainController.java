@@ -3,6 +3,7 @@ package com.group.controller;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.apache.log4j.*;
 
@@ -11,55 +12,57 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+
 @RestController
 public class MainController {
 	public static boolean ELBExist = false;
 	public List<String> ec2List;
 	public ELBv2Clients elbClients;
+	public EC2Clients ec2Clients;
 	String elbState;
 	private static Logger log = Logger.getLogger(MainController.class);
+    final static String PENDING_STATUS = "pending";
+    final static String ACTIVE_STATUS = "active";
+    final static String RUNNING_STATUS = "running";
+    final static String STOPPED_STATUS = "stopped";
 
 	@RequestMapping("/")
 	public String home() {
-		log.info("logging test is good");
-		System.out.println(log.getName());
-		return "Welcome to our ecommerce system! Weiyu";
+		return "Welcome to our ecommerce system!";
 	}
 
 	@RequestMapping(value = "/createelb", method = RequestMethod.POST)
 	public Map<String, String> createELB() {
-		final String PENDING_STATUS = "pending";
-		final String ACTIVE_STATUS = "active";
-		final String RUNNING_STATUS = "running";
-		final String STOPPED_STATUS = "stopped";
+
 		Map<String, String> ret = new HashMap<>();
 
 		if (!ELBExist) {
 			String ec2ConfigFilePath = this.getClass().getClassLoader()
-					.getResource("ec2Config.yaml").toString();
+					.getResource("ec2Config.yaml").getFile();
+			log.info(ec2ConfigFilePath);
 			String elbConfigFilePath = this.getClass().getClassLoader()
-					.getResource("elbConfig.yaml").toString();
+					.getResource("elbConfig.yaml").getFile();
 
 			elbClients = new ELBv2Clients(elbConfigFilePath);
 
-			EC2Clients ec2Instance = new EC2Clients(ec2ConfigFilePath);
+            ec2Clients = new EC2Clients(ec2ConfigFilePath);
 
-			List<String> subnetIdList = ec2Instance.getSubnetId();
+			List<String> subnetIdList = ec2Clients.getSubnetId();
 
 			for (int i = 0; i < 4; i++) {
-				String instanceId = ec2Instance.createEC2Instance(
-						ec2Instance.ec2Config.getImageID(),
-						ec2Instance.ec2Config.getInstanceType(),
-						ec2Instance.ec2Config.getMinInstanceCount(),
-						ec2Instance.ec2Config.getMaxInstanceCount(),
-						ec2Instance.ec2Config.getKeyName(),
-						ec2Instance.ec2Config.getSecurityGroupId(),
+				String instanceId = ec2Clients.createEC2Instance(
+						ec2Clients.ec2Config.getImageID(),
+						ec2Clients.ec2Config.getInstanceType(),
+						ec2Clients.ec2Config.getMinInstanceCount(),
+						ec2Clients.ec2Config.getMaxInstanceCount(),
+						ec2Clients.ec2Config.getKeyName(),
+						ec2Clients.ec2Config.getSecurityGroupId(),
 						subnetIdList.get(i % 2));
 
-				System.out.println("The newly created ec2 instance has an ID: "
+				log.info("The newly created ec2 instance has an ID: "
 						+ instanceId);
-				System.out.println(ec2Instance.getInstanceId());
-				System.out.println("**********************");
+				log.info(ec2Clients.getInstanceId());
+				log.info("**********************");
 			}
 
 			try {
@@ -67,30 +70,30 @@ public class MainController {
 						.println("Sleep 20 seconds starting all EC2 instances.");
 				Thread.sleep(20000); // Wait until all ec2 instances are up.
 			} catch (Exception e) {
-				System.out.print(e);
+				log.error(e);
 			}
 
-			ec2List = ec2Instance.listInstances(RUNNING_STATUS);
+			ec2List = ec2Clients.listInstances(RUNNING_STATUS);
 
-			// List<String> ec2List = ec2Instance.listInstances(STOPPED_STATUS);
+			// List<String> ec2List = ec2Clients.listInstances(STOPPED_STATUS);
 
 			for (String inst : ec2List) {
-				ec2Instance.startInstance(inst);
-				// ec2Instance.stopInstance(inst);
+				ec2Clients.startInstance(inst);
+				// ec2Clients.stopInstance(inst);
 			}
 
 			try {
 				Thread.sleep(20000); // Wait until all ec2 instances are up.
 			} catch (Exception e) {
-				System.out.print(e);
+				log.info(e);
 			}
 
-			List<String> ec2InstanceSubnetIds = ec2Instance
+			List<String> ec2InstanceSubnetIds = ec2Clients
 					.listInstanceSubnetIds(RUNNING_STATUS);
 			for (String s : ec2InstanceSubnetIds)
-				System.out.println(s);
+				log.info(s);
 
-			List<SecurityGroup> securityGroups = ec2Instance
+			List<SecurityGroup> securityGroups = ec2Clients
 					.getSecurityGroupId(elbClients.elbConfig
 							.getSecurityGroupName());
 			List<String> securityGroupId = new ArrayList<>();
@@ -98,12 +101,12 @@ public class MainController {
 				securityGroupId.add(s.getGroupId());
 			}
 
-			List<String> ec2InstanceVpcIds = ec2Instance
+			List<String> ec2InstanceVpcIds = ec2Clients
 					.listInstanceVpcIds(RUNNING_STATUS);
 			for (String s : ec2InstanceVpcIds)
-				System.out.println(s);
+				log.info(s);
 
-			List<String> ec2RunningInstances = ec2Instance
+			List<String> ec2RunningInstances = ec2Clients
 					.listInstances(RUNNING_STATUS);
 
 			elbState = elbClients.createELB(elbClients.elbConfig.getName(),
@@ -116,10 +119,10 @@ public class MainController {
 							.println("Sleep 20 seconds waiting ELB becoming Active.");
 					Thread.sleep(20000); // Wait until all ec2 instances are up.
 				} catch (Exception e) {
-					System.out.println(e);
+					log.info(e);
 				}
 				elbState = elbClients.getELBState(elbClients.elbArn);
-				System.out.println(elbState);
+				log.info(elbState);
 			}
 
 			if (elbState.equals(ACTIVE_STATUS)) {
@@ -133,4 +136,140 @@ public class MainController {
 		return ret;
 	}
 
+	@RequestMapping(value = "/searchelb", method = RequestMethod.GET)
+	public Map<String, String> searchELB(@RequestParam(value="elbArn") String ELBArn) {
+		return elbClients.searchELB(ELBArn);
+	}
+
+	@RequestMapping(value = "/listelb", method = RequestMethod.GET)
+	public Map<String, String> searchELB() {
+		return elbClients.listELB();
+	}
+
+	@RequestMapping(value = "/getelbdns", method = RequestMethod.GET)
+	public String getELBDNS(@RequestParam(value="elbarn") String ELBArn) {
+		return elbClients.getELBDNSName(ELBArn);
+	}
+
+	@RequestMapping(value = "/getelbstate", method = RequestMethod.GET)
+	public String getELBState(@RequestParam(value="elbarn") String ELBArn) {
+		return elbClients.getELBState(ELBArn);
+	}
+
+	@RequestMapping(value = "/getelbstats", method = RequestMethod.GET)
+	public Map<String, String> getELBStats(@RequestParam(value="elbarn") String ELBArn, @RequestParam(value="metric", defaultValue = "UnHealthyHostCount") String metricName) {
+		Map<String, String> ret = new HashMap<>();
+
+		if (elbClients.elbTargetGroupArn.size() > 0 ) {
+			for (String tn : elbClients.elbTargetGroupArn) {
+				ret = elbClients.getELBMetricStats(ELBArn, tn, metricName);
+			}
+		}
+		return ret;
+	}
+
+	@RequestMapping(value = "/getelbstatsall", method = RequestMethod.GET)
+	public Map<String, Map<String, String>> getELBStatsAll(@RequestParam(value="elbarn") String ELBArn) {
+		List<String> metricList = new ArrayList<>();
+		metricList.add("ActiveConnectionCount");
+		metricList.add("HealthyHostCount");
+		metricList.add("HTTPCode_ELB_4XX_Count");
+		metricList.add("HTTPCode_ELB_5XX_Count");
+		metricList.add("HTTPCode_Target_2XX_Count");
+		metricList.add("HTTPCode_Target_3XX_Count");
+		metricList.add("HTTPCode_Target_4XX_Count");
+		metricList.add("HTTPCode_Target_5XX_Count");
+		metricList.add("RequestCount");
+		metricList.add("TargetResponseTime");
+		metricList.add("UnHealthyHostCount");
+		metricList.add("ProcessedBytes");
+
+		Map<String, Map<String,String>> ret = new HashMap<>();
+
+		if (elbClients.elbTargetGroupArn.size() > 0 ) {
+		    for (String metric: metricList) {
+		        Map<String, String> stats = new HashMap<>();
+                for (String tn : elbClients.elbTargetGroupArn) {
+                    stats = elbClients.getELBMetricStats(ELBArn, tn, metric);
+                }
+                ret.put(metric, stats);
+            }
+		}
+		return ret;
+	}
+
+	@RequestMapping(value = "/deleteelb", method = RequestMethod.DELETE)
+	public String deleteELB(@RequestParam(value="elbarn") String ELBArn) {
+		return elbClients.deleteELB(ELBArn);
+	}
+
+	@RequestMapping(value = "/listtg", method = RequestMethod.GET)
+	public List<String> listTG(@RequestParam(value="elbarn") String ELBArn) {
+		return elbClients.describeTargetGroup(ELBArn);
+	}
+
+	@RequestMapping(value = "/deletetg", method = RequestMethod.DELETE)
+	public Map<String, String> deleteTG() {
+		Map<String, String> ret = new HashMap<>();
+        if (elbClients.elbTargetGroupArn.size() > 0 ) {
+            for(String tgArn: elbClients.elbTargetGroupArn) {
+                ret.put(tgArn, elbClients.deleteTargetGroup(tgArn));
+            }
+        }
+		return ret;
+	}
+
+    @RequestMapping(value = "/listec2instance", method = RequestMethod.GET)
+    public List<String> listEC2(@RequestParam(value="state", defaultValue = RUNNING_STATUS) String ec2state) {
+        return ec2Clients.listInstances(ec2state);
+    }
+
+    @RequestMapping(value = "/stopec2instance", method = RequestMethod.POST)
+    public String stopEC2(@RequestParam(value="id") String ec2InstanceId) {
+        return ec2Clients.stopInstance(ec2InstanceId);
+    }
+
+    @RequestMapping(value = "/deleteec2instance", method = RequestMethod.DELETE)
+    public String deleteEC2(@RequestParam(value="id") String ec2InstanceId) {
+        return ec2Clients.terminateInstance(ec2InstanceId);
+    }
+
+    @RequestMapping(value = "/deleteallec2instance", method = RequestMethod.DELETE)
+    public List<String> deleteAllEC2() {
+	    List<String> ec2List = ec2Clients.listInstances(RUNNING_STATUS);
+	    List<String> ret = new ArrayList<>();
+	    for (String ec2 : ec2List) {
+            ret.add(ec2Clients.terminateInstance(ec2));
+        }
+        return ret;
+    }
+
+    @RequestMapping(value = "/cleanup", method = RequestMethod.POST)
+    public Map<String, String> cleanUpAll() {
+
+        Map<String, String> ret = new HashMap<>();
+        if (elbClients!=null && !elbClients.elbArn.isEmpty()) {
+            ret.put(elbClients.elbArn, elbClients.deleteELB(elbClients.elbArn));
+
+            try {
+                Thread.sleep(20000); // Wait until all ec2 instances are up.
+            } catch (Exception e) {
+                log.error(e);
+            }
+
+            if (elbClients.elbTargetGroupArn.size() > 0) {
+                for (String tgArn : elbClients.elbTargetGroupArn) {
+                    ret.put(tgArn, elbClients.deleteTargetGroup(tgArn));
+                }
+            }
+
+            List<String> ec2List = ec2Clients.listInstances(RUNNING_STATUS);
+            for (String ec2 : ec2List) {
+                ret.put(ec2, ec2Clients.terminateInstance(ec2));
+            }
+        } else {
+            ret.put("error", "ELB and AS have not been created yet.");
+        }
+        return ret;
+    }
 }

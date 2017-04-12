@@ -18,11 +18,13 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.apache.log4j.Logger;
 
 
 public class EC2Clients extends AWSClients{
 
     private static final Object PENDING_STATUS = "pending";
+    private static Logger log = Logger.getLogger(ELBv2Clients.class);
 
     protected AmazonEC2 AWSEC2Client;
     public EC2Config ec2Config;
@@ -37,7 +39,7 @@ public class EC2Clients extends AWSClients{
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
             ec2Config = mapper.readValue(new File(configFilePath), EC2Config.class);
-            System.out.println(ReflectionToStringBuilder.toString(ec2Config,ToStringStyle.MULTI_LINE_STYLE));
+            log.info(ReflectionToStringBuilder.toString(ec2Config,ToStringStyle.MULTI_LINE_STYLE));
         } catch (Exception e) {
 
             e.printStackTrace();
@@ -65,7 +67,7 @@ public class EC2Clients extends AWSClients{
 
         RunInstancesResult response = AWSEC2Client.runInstances(request);
 
-        System.out.println("RunInstancesResult: " + response);
+        log.info("RunInstancesResult: " + response);
 
         return getInstanceId();
     }
@@ -96,10 +98,10 @@ public class EC2Clients extends AWSClients{
 
         StartInstancesResult response = AWSEC2Client.startInstances(request);
 
-        System.out.println("response: " + response);
+        log.info("response: " + response);
     }
 
-    public void stopInstance (String instanceId) {
+    public String stopInstance (String instanceId) {
 
         List<String> instanceIds = new ArrayList<String>();
         instanceIds.add(instanceId);
@@ -108,11 +110,12 @@ public class EC2Clients extends AWSClients{
         request.setInstanceIds(instanceIds);
 
         StopInstancesResult response = AWSEC2Client.stopInstances(request);
-
-        System.out.println("StopInstancesResult: " + response);
+        String ret = "StopInstancesId " + instanceId + ": " + response.toString();
+        log.info(ret);
+        return ret;
     }
 
-    public void terminateInstance (String instanceId) {
+    public String terminateInstance (String instanceId) {
 
         List<String> instanceIds = new ArrayList<String>();
         instanceIds.add(instanceId);
@@ -121,13 +124,14 @@ public class EC2Clients extends AWSClients{
         request.setInstanceIds(instanceIds);
 
         TerminateInstancesResult response = AWSEC2Client.terminateInstances(request);
-
-        System.out.println("TerminateInstancesResult: " +  response);
+        String ret = "TerminateInstancesId " + instanceId + ": " + response.toString();
+        log.info(ret);
+        return ret;
     }
 
     public List<String> listInstances(String instanceState) {
 
-        List<String> instanceIdList = new ArrayList<String>();
+        List<String> instanceIdList = new ArrayList<>();
 
         DescribeInstancesResult response = AWSEC2Client.describeInstances();
 
@@ -139,36 +143,36 @@ public class EC2Clients extends AWSClients{
                     for(Instance instance: instances) {
                         if (instance.getState().getName().equals(instanceState)){
                             instanceIdList.add(instance.getInstanceId());
-                            System.out.println("InstanceId: " + instance.getInstanceId());
-                            System.out.println("ImageId: " + instance.getImageId());
-                            System.out.println("InstanceType: " + instance.getInstanceType());
-                            System.out.println("KeyName: " + instance.getKeyName());
-                            System.out.println("State: " + instance.getState());
-                            System.out.println("PrivateDnsName: " + instance.getPrivateDnsName());
-                            System.out.println("PrivateIpAddress: " + instance.getPrivateIpAddress());
-                            System.out.println("PublicDnsName: " + instance.getPublicDnsName());
-                            System.out.println("PublicIpAddress: " + instance.getPublicIpAddress());
-                            System.out.println("Architecture: " + instance.getArchitecture());
-                            System.out.println("SecurityGroups: " + instance.getSecurityGroups());
-                            System.out.println("SubnetID: " + instance.getSubnetId());
-                            System.out.println("VpcId: " + instance.getVpcId());
+                            log.info("InstanceId: " + instance.getInstanceId());
+                            log.info("ImageId: " + instance.getImageId());
+                            log.info("InstanceType: " + instance.getInstanceType());
+                            log.info("KeyName: " + instance.getKeyName());
+                            log.info("State: " + instance.getState());
+                            log.info("PrivateDnsName: " + instance.getPrivateDnsName());
+                            log.info("PrivateIpAddress: " + instance.getPrivateIpAddress());
+                            log.info("PublicDnsName: " + instance.getPublicDnsName());
+                            log.info("PublicIpAddress: " + instance.getPublicIpAddress());
+                            log.info("Architecture: " + instance.getArchitecture());
+                            log.info("SecurityGroups: " + instance.getSecurityGroups());
+                            log.info("SubnetID: " + instance.getSubnetId());
+                            log.info("VpcId: " + instance.getVpcId());
 
 
                             List<Tag> tags = instance.getTags();
                             if(tags!=null && !tags.isEmpty()) {
                                 for (Tag tag : tags) {
-                                    System.out.println("TAG: " + tag.getKey() + "-" + tag.getValue());
+                                    log.info("TAG: " + tag.getKey() + "-" + tag.getValue());
                                 }
                             }
                         }
-                        System.out.println("-------");
+                        log.info("-------");
                     }
                 } else {
-                    System.out.println("No Instances Found!!!");
+                    log.info("No Instances Found!!!");
                 }
             }
         } else {
-            System.out.println("No Reservation List Found!!!");
+            log.info("No Reservation List Found!!!");
         }
 
         return instanceIdList;
@@ -190,32 +194,32 @@ public class EC2Clients extends AWSClients{
 
                 if(instances!=null && !instances.isEmpty()) {
                     for(Instance instance: instances) {
-                        System.out.println("InstanceId: " + instance.getInstanceId());
-                        System.out.println("ImageId: " + instance.getImageId());
-                        System.out.println("InstanceType: " + instance.getInstanceType());
-                        System.out.println("KeyName: " + instance.getKeyName());
-                        System.out.println("State: " + instance.getState());
-                        System.out.println("PrivateDnsName: " + instance.getPrivateDnsName());
-                        System.out.println("PrivateIpAddress: " + instance.getPrivateIpAddress());
-                        System.out.println("PublicDnsName: " + instance.getPublicDnsName());
-                        System.out.println("PublicIpAddress: " + instance.getPublicIpAddress());
-                        System.out.println("Architecture: " + instance.getArchitecture());
-                        System.out.println("SecurityGroups: " + instance.getSecurityGroups());
+                        log.info("InstanceId: " + instance.getInstanceId());
+                        log.info("ImageId: " + instance.getImageId());
+                        log.info("InstanceType: " + instance.getInstanceType());
+                        log.info("KeyName: " + instance.getKeyName());
+                        log.info("State: " + instance.getState());
+                        log.info("PrivateDnsName: " + instance.getPrivateDnsName());
+                        log.info("PrivateIpAddress: " + instance.getPrivateIpAddress());
+                        log.info("PublicDnsName: " + instance.getPublicDnsName());
+                        log.info("PublicIpAddress: " + instance.getPublicIpAddress());
+                        log.info("Architecture: " + instance.getArchitecture());
+                        log.info("SecurityGroups: " + instance.getSecurityGroups());
 
                         List<Tag> tags = instance.getTags();
                         if(tags!=null && !tags.isEmpty()) {
                             for(Tag tag: tags) {
-                                System.out.println("TAG: " + tag.getKey() + "-" + tag.getValue());
+                                log.info("TAG: " + tag.getKey() + "-" + tag.getValue());
                             }
                         }
-                        System.out.println("-------");
+                        log.info("-------");
                     }
                 } else {
-                    System.out.println("No Instances Found for Instance Id: " + instanceId + "!!!");
+                    log.info("No Instances Found for Instance Id: " + instanceId + "!!!");
                 }
             }
         } else {
-            System.out.println("No Reservation List Found for Instance Id: " + instanceId + "!!!");
+            log.info("No Reservation List Found for Instance Id: " + instanceId + "!!!");
         }
     }
 
@@ -230,14 +234,14 @@ public class EC2Clients extends AWSClients{
         if(response!=null && response.getInstanceStatuses()!=null && !response.getInstanceStatuses().isEmpty()) {
             List<InstanceStatus> instanceStatuses = response.getInstanceStatuses();
             for(InstanceStatus instanceStatus: instanceStatuses) {
-                System.out.println("InstanceId: " + instanceStatus.getInstanceId());
-                System.out.println("InstanceState" + instanceStatus.getInstanceState());
-                System.out.println("InstanceStatus: " + instanceStatus.getInstanceStatus());
-                System.out.println("SystemStatus: " + instanceStatus.getSystemStatus());
-                System.out.println("-------");
+                log.info("InstanceId: " + instanceStatus.getInstanceId());
+                log.info("InstanceState" + instanceStatus.getInstanceState());
+                log.info("InstanceStatus: " + instanceStatus.getInstanceStatus());
+                log.info("SystemStatus: " + instanceStatus.getSystemStatus());
+                log.info("-------");
             }
         } else {
-            System.out.println("No Instance Statuses Found!!!");
+            log.info("No Instance Statuses Found!!!");
         }
     }
 
@@ -257,14 +261,14 @@ public class EC2Clients extends AWSClients{
         if(response!=null && response.getInstanceStatuses()!=null && !response.getInstanceStatuses().isEmpty()) {
             List<InstanceStatus> instanceStatuses = response.getInstanceStatuses();
             for(InstanceStatus instanceStatus: instanceStatuses) {
-                System.out.println("InstanceId: " + instanceStatus.getInstanceId());
-                System.out.println("InstanceState" + instanceStatus.getInstanceState());
-                System.out.println("InstanceStatus: " + instanceStatus.getInstanceStatus());
-                System.out.println("SystemStatus: " + instanceStatus.getSystemStatus());
-                System.out.println("-------");
+                log.info("InstanceId: " + instanceStatus.getInstanceId());
+                log.info("InstanceState" + instanceStatus.getInstanceState());
+                log.info("InstanceStatus: " + instanceStatus.getInstanceStatus());
+                log.info("SystemStatus: " + instanceStatus.getSystemStatus());
+                log.info("-------");
             }
         } else {
-            System.out.println("No Instance Statuses Found!!!");
+            log.info("No Instance Statuses Found!!!");
         }
     }
 
@@ -293,28 +297,28 @@ public class EC2Clients extends AWSClients{
                     for(Instance instance: instances) {
                         if (instance.getState().getName().equals(instanceState)){
                             instanceSubnetIdList.add(instance.getSubnetId());
-                            System.out.println("InstanceId: " + instance.getInstanceId());
-                            System.out.println("ImageId: " + instance.getImageId());
-                            System.out.println("InstanceType: " + instance.getInstanceType());
-                            System.out.println("KeyName: " + instance.getKeyName());
-                            System.out.println("State: " + instance.getState());
-                            System.out.println("PrivateDnsName: " + instance.getPrivateDnsName());
-                            System.out.println("PrivateIpAddress: " + instance.getPrivateIpAddress());
-                            System.out.println("PublicDnsName: " + instance.getPublicDnsName());
-                            System.out.println("PublicIpAddress: " + instance.getPublicIpAddress());
-                            System.out.println("Architecture: " + instance.getArchitecture());
-                            System.out.println("SecurityGroups: " + instance.getSecurityGroups());
-                            System.out.println("SubnetID: " + instance.getSubnetId());
+                            log.info("InstanceId: " + instance.getInstanceId());
+                            log.info("ImageId: " + instance.getImageId());
+                            log.info("InstanceType: " + instance.getInstanceType());
+                            log.info("KeyName: " + instance.getKeyName());
+                            log.info("State: " + instance.getState());
+                            log.info("PrivateDnsName: " + instance.getPrivateDnsName());
+                            log.info("PrivateIpAddress: " + instance.getPrivateIpAddress());
+                            log.info("PublicDnsName: " + instance.getPublicDnsName());
+                            log.info("PublicIpAddress: " + instance.getPublicIpAddress());
+                            log.info("Architecture: " + instance.getArchitecture());
+                            log.info("SecurityGroups: " + instance.getSecurityGroups());
+                            log.info("SubnetID: " + instance.getSubnetId());
 
                         }
-                        System.out.println("-------");
+                        log.info("-------");
                     }
                 } else {
-                    System.out.println("No Instances SubnetID Found!!!");
+                    log.info("No Instances SubnetID Found!!!");
                 }
             }
         } else {
-            System.out.println("No Reservation List Found!!!");
+            log.info("No Reservation List Found!!!");
         }
 
         return instanceSubnetIdList;
@@ -334,17 +338,17 @@ public class EC2Clients extends AWSClients{
                     for(Instance instance: instances) {
                         if (instance.getState().getName().equals(instanceState)){
                             instanceVpcIdList.add(instance.getVpcId());
-                            System.out.println("InstanceId: " + instance.getInstanceId());
-                            System.out.println("VpcID: " + instance.getVpcId());
+                            log.info("InstanceId: " + instance.getInstanceId());
+                            log.info("VpcID: " + instance.getVpcId());
                         }
-                        System.out.println("-------");
+                        log.info("-------");
                     }
                 } else {
-                    System.out.println("No Instances VpcID Found!!!");
+                    log.info("No Instances VpcID Found!!!");
                 }
             }
         } else {
-            System.out.println("No Reservation List Found!!!");
+            log.info("No Reservation List Found!!!");
         }
 
         return instanceVpcIdList;
@@ -409,7 +413,7 @@ public class EC2Clients extends AWSClients{
         request.setResources(instanceIds);
 
         DeleteTagsResult response = AWSEC2Client.deleteTags(request);
-        System.out.println("response: " + response);
+        log.info("response: " + response);
     }
 
     public void listTags() {
@@ -419,11 +423,11 @@ public class EC2Clients extends AWSClients{
         if(response!=null && response.getTags()!=null && !response.getTags().isEmpty()) {
             List<TagDescription> tagDescriptions = response.getTags();
             for(TagDescription tagDescription: tagDescriptions) {
-                System.out.println("ResourceId: " + tagDescription.getResourceId());
-                System.out.println("ResourceType: " + tagDescription.getResourceType());
-                System.out.println("Key: " + tagDescription.getKey());
-                System.out.println("Value" + tagDescription.getValue());
-                System.out.println("-------");
+                log.info("ResourceId: " + tagDescription.getResourceId());
+                log.info("ResourceType: " + tagDescription.getResourceType());
+                log.info("Key: " + tagDescription.getKey());
+                log.info("Value" + tagDescription.getValue());
+                log.info("-------");
             }
         }
     }

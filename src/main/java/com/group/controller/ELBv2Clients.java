@@ -35,9 +35,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 public class ELBv2Clients extends AWSClients{
+    private static Logger log = Logger.getLogger(ELBv2Clients.class);
 
     private AmazonElasticLoadBalancingClient AWSELBClient;
     private AmazonCloudWatchClient AWSCloudWatchClient;
@@ -56,11 +58,11 @@ public class ELBv2Clients extends AWSClients{
         AWSELBClient.setRegion(usaRegion);
         AWSCloudWatchClient = new AmazonCloudWatchClient(getCredentials());
         AWSCloudWatchClient.setRegion(usaRegion);
-
+        elbArn = "";
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
             elbConfig = mapper.readValue(new File(configFilePath), ELBConfig.class);
-            System.out.println(ReflectionToStringBuilder.toString(elbConfig, ToStringStyle.MULTI_LINE_STYLE));
+            log.info(ReflectionToStringBuilder.toString(elbConfig, ToStringStyle.MULTI_LINE_STYLE));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -95,8 +97,8 @@ public class ELBv2Clients extends AWSClients{
             ec2InstanceList2.add(ec2RunningInstances.get(i));
         }
 
-        registerELBTargetGroup(elbTargetGroupArn.get(0), ec2InstanceList1);
-        registerELBTargetGroup(elbTargetGroupArn.get(1), ec2InstanceList2);
+        registerELBTargets(elbTargetGroupArn.get(0), ec2InstanceList1);
+        registerELBTargets(elbTargetGroupArn.get(1), ec2InstanceList2);
 
         createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort(), elbTargetGroupArn.get(0));
         createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort()+8000, elbTargetGroupArn.get(1));
@@ -106,7 +108,7 @@ public class ELBv2Clients extends AWSClients{
         createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(1), "/web/*", 11);
 
 
-        System.out.println("CreateELBResult: " + response.toString());
+        log.info("CreateELBResult: " + response.toString());
         return response.getLoadBalancers().get(0).getState().getCode();
     }
 
@@ -128,20 +130,20 @@ public class ELBv2Clients extends AWSClients{
     /*
     * http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/elasticloadbalancingv2/AmazonElasticLoadBalancing.html#registerTargets-com.amazonaws.services.elasticloadbalancingv2.model.RegisterTargetsRequest-
      */
-    public void registerELBTargetGroup(String targetGroupArn, List<String> ec2RunningInstances) {
+    public void registerELBTargets(String targetGroupArn, List<String> ec2RunningInstances) {
         RegisterTargetsRequest request = new RegisterTargetsRequest()
                 .withTargetGroupArn(targetGroupArn);
 
         List<TargetDescription> targetDescriptionList = new ArrayList<TargetDescription>();
 
         for (String ec2 : ec2RunningInstances) {
-            System.out.println(ec2);
+            log.info(ec2);
             targetDescriptionList.add(new TargetDescription().withId(ec2).withPort(elbConfig.getInstancePort()));
         }
         request.withTargets(targetDescriptionList);
 
         RegisterTargetsResult response = AWSELBClient.registerTargets(request);
-        System.out.print("Regeister Targets result:" + response);
+        System.out.print("Register Targets result:" + response);
     }
 
     /*
@@ -183,15 +185,38 @@ public class ELBv2Clients extends AWSClients{
     /*
      * http://docs.aws.amazon.com/cli/latest/reference/elb/delete-load-balancer.html
      */
-    public void deleteELB(String ELBArn) {
+    public String deleteELB(String ELBArn) {
         DeleteLoadBalancerRequest request = new DeleteLoadBalancerRequest()
                 .withLoadBalancerArn(ELBArn);
 
         DeleteLoadBalancerResult response = AWSELBClient.deleteLoadBalancer(request);
-
-        System.out.println("DeleteLoadBalancerResult: " + response);
+        String ret = "DeleteLoadBalancerResult: " + response;
+        log.info(ret);
+        return ret;
     }
 
+    public List<String> describeTargetGroup(String ELBArn) {
+        DescribeTargetGroupsRequest request = new DescribeTargetGroupsRequest()
+                .withLoadBalancerArn(ELBArn);
+
+        List<String> tgList = new ArrayList<>();
+        DescribeTargetGroupsResult response = AWSELBClient.describeTargetGroups(request);
+        log.info("DeleteLoadBalancerResult: " + response.toString());
+
+        for (TargetGroup tg : response.getTargetGroups())
+            tgList.add(tg.getTargetGroupArn());
+        return tgList;
+    }
+
+    public String deleteTargetGroup(String TGArn) {
+        DeleteTargetGroupRequest request = new DeleteTargetGroupRequest()
+                .withTargetGroupArn(TGArn);
+
+        DeleteTargetGroupResult response = AWSELBClient.deleteTargetGroup(request);
+        String ret = "DeleteLoadBalancerResult: " + response.toString();
+        log.info(ret);
+        return ret;
+    }
     /*
     * http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/cloudwatch/AmazonCloudWatchClient.html#listMetrics-com.amazonaws.services.cloudwatch.model.ListMetricsRequest-
      */
@@ -219,10 +244,10 @@ public class ELBv2Clients extends AWSClients{
                 response = AWSCloudWatchClient.listMetrics(listMetricsRequest);
                 if (response != null && response.getMetrics().size() > 0) {
                     for (Metric metric : response.getMetrics()) {
-                        System.out.println(metric.getMetricName() + "(" + metric.getNamespace() + ")");
+                        log.info(metric.getMetricName() + "(" + metric.getNamespace() + ")");
 
                         for (Dimension dimension : metric.getDimensions()) {
-                            System.out.println(" " + dimension.getName() + ": " + dimension.getValue());
+                            log.info(" " + dimension.getName() + ": " + dimension.getValue());
                         }
                     }
                 } else {
@@ -278,15 +303,15 @@ public class ELBv2Clients extends AWSClients{
 
         if (result.getDatapoints().size() > 0) {
             for (Datapoint point : result.getDatapoints()) {
-                res.put(tgFilter + " " + metricName+" sum", point.getSum().toString());
-                res.put(tgFilter + " " + metricName+" Average", point.getAverage().toString());
-                res.put(tgFilter + " " + metricName+" Maximum", point.getMaximum().toString());
-                res.put(tgFilter + " " + metricName+" Minimum", point.getMinimum().toString());
+                res.put(tgFilter + " " + metricName + " sum", point.getSum().toString());
+                res.put(tgFilter + " " + metricName + " Average", point.getAverage().toString());
+                res.put(tgFilter + " " + metricName + " Maximum", point.getMaximum().toString());
+                res.put(tgFilter + " " + metricName + " Minimum", point.getMinimum().toString());
 
-                System.out.println(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
-                System.out.println(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
-                System.out.println(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
-                System.out.println(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
+                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
             }
         }
         return res;
@@ -301,7 +326,7 @@ public class ELBv2Clients extends AWSClients{
         DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers(request);
 
         String state = response.getLoadBalancers().get(0).getState().getCode();
-        System.out.println("ELB:" + elbArn + " state:" + state);
+        log.info("ELB:" + elbArn + " state:" + state);
         return state;
     }
 
@@ -311,8 +336,71 @@ public class ELBv2Clients extends AWSClients{
         DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers(request);
 
         String elbDNSName = response.getLoadBalancers().get(0).getDNSName();
-        System.out.println("ELB:" + elbArn + " DNS name:" + elbDNSName);
+        log.info("ELB:" + elbArn + " DNS name:" + elbDNSName);
         return elbDNSName;
+    }
+
+    public Map<String, String> searchELB(String ELBArn) {
+        Map<String, String> ret  = new HashMap<> ();
+        DescribeLoadBalancersRequest request = new DescribeLoadBalancersRequest();
+        List<String> ELBs = new ArrayList<>();
+        ELBs.add(ELBArn);
+
+        request.setLoadBalancerArns(ELBs);
+        DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers(request );
+
+        List<LoadBalancer> ELBList = response.getLoadBalancers();
+        printELBDescription(ELBList, ret);
+        return ret;
+    }
+
+    public Map<String, String> listELB() {
+        Map<String, String> ret  = new HashMap<>();
+
+        DescribeLoadBalancersRequest request = new DescribeLoadBalancersRequest();
+        DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers(request);
+
+        List<LoadBalancer> ELBList = response.getLoadBalancers();
+
+        printELBDescription(ELBList, ret);
+        return ret;
+    }
+
+    private void printELBDescription(List<LoadBalancer> ELBList, Map<String, String> ret) {
+        for(LoadBalancer elb: ELBList) {
+            log.info("LoadBalancerName: " + elb.getLoadBalancerName());
+            ret.put("LoadBalancerName", elb.getLoadBalancerName());
+            log.info("LoadBalancerARN: " + elb.getLoadBalancerArn());
+            ret.put("LoadBalancerARN", elb.getLoadBalancerArn());
+            log.info("LoadBalancerDNSName: " + elb.getDNSName());
+            ret.put("LoadBalancerDNSName", elb.getDNSName());
+            log.info("Scheme: " + elb.getScheme());
+            ret.put("Scheme", elb.getScheme());
+            log.info("Created Time: " + elb.getCreatedTime().toString());
+            ret.put("CreatedTime", elb.getCreatedTime().toString());
+            log.info("LoadBalancerState: " + elb.getState());
+            ret.put("LoadBalancerState", elb.getScheme());
+            log.info("LoadBalancerType: " +  elb.getType());
+            ret.put("LoadBalancerType", elb.getType());
+            log.info("Load BalancerVpcID: " + elb.getVpcId());
+            ret.put("LoadBalancerVpcID", elb.getVpcId());
+
+            log.info("AvailabilityZones: ");
+            int i = 0;
+            for(AvailabilityZone az: elb.getAvailabilityZones()) {
+                log.info("\tAvailabilityZone: " + az.getZoneName());
+                ret.put("AvailabilityZone" + i , az.getZoneName());
+                i ++;
+            }
+
+            i = 0;
+            log.info("SecurityGroups: ");
+            for(String securityGroup: elb.getSecurityGroups()) {
+                log.info("\tName: " + securityGroup);
+                ret.put("SecurityGroup" + i , securityGroup);
+                i ++;
+            }
+        }
     }
 
     private String trimELBArn (String elbArn) {
@@ -323,7 +411,7 @@ public class ELBv2Clients extends AWSClients{
         if (m.find()) {
             return m.group(2);
         } else {
-            System.out.println("Incorrect ELB Arn");
+            log.error("Incorrect ELB Arn");
         }
         return "";
     }
@@ -336,7 +424,7 @@ public class ELBv2Clients extends AWSClients{
         if (m.find()) {
             return m.group(1);
         } else {
-            System.out.println("Incorrect Target group Arn");
+            log.error("Incorrect Target group Arn");
         }
         return "";
     }
