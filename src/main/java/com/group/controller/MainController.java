@@ -19,6 +19,7 @@ public class MainController {
 	public List<String> ec2List;
 	public ELBv2Clients elbClients;
 	public EC2Clients ec2Clients;
+	public ASClients asClients;
 	String elbState;
 	private static Logger log = Logger.getLogger(MainController.class);
     final static String PENDING_STATUS = "pending";
@@ -272,4 +273,75 @@ public class MainController {
         }
         return ret;
     }
+
+	@RequestMapping(value = "/createas", method = RequestMethod.GET)
+	public Map<String, String> createAS(){
+		int capacity = 1;
+		String comparisonOperator = "up";
+		Map<String, String> ret = new HashMap<>();
+
+		String asConfigFilePath = this.getClass().getClassLoader()
+				.getResource("asConfig.yaml").getFile();
+		asClients = new ASClients(asConfigFilePath);
+
+		asClients.createConfiguration(asClients.asConfig.getConfigName(),
+				asClients.asConfig.getImageID(),
+				asClients.asConfig.getInstanceType(),
+				asClients.asConfig.getSecurityGroupName());
+
+		try {
+			System.out
+					.println("Sleep 5 seconds for creating AS config.");
+			Thread.sleep(5000); // Wait until all ec2 instances are up.
+		} catch (Exception e) {
+			log.error(e);
+		}
+
+		asClients.createASGroup(asClients.asConfig.getAsgroupName(),
+				asClients.asConfig.getConfigName(),
+				asClients.asConfig.getAvailablityZone(),
+				asClients.asConfig.getElbName());
+
+		try {
+			System.out
+					.println("Sleep 5 seconds for creating AS group.");
+			Thread.sleep(5000); // Wait until all ec2 instances are up.
+		} catch (Exception e) {
+			log.error(e);
+		}
+		String policyArn = asClients.setPolicy(asClients.asConfig.getAsgroupName(),
+				asClients.asConfig.getPolicyName(),
+				capacity,
+				"ChangeInCapacity");
+
+		asClients.setBasicAlarm(policyArn,
+				asClients.asConfig.getAlarmName(),
+				asClients.asConfig.getAsgroupName(),
+				comparisonOperator);
+		ret.put("ASName", asClients.asConfig.getAsgroupName());
+		return ret;
+	}
+
+	/*
+     * Change RequestMethod to GET for testing purpose
+     */
+	@RequestMapping(value = "/listas", method = RequestMethod.POST)
+	public Map<String, String> listAS() {
+		String asConfigFilePath = this.getClass().getClassLoader()
+				.getResource("asConfig.yaml").getFile();
+		asClients = new ASClients(asConfigFilePath);
+		return asClients.listAS();
+	}
+
+	/*
+     * Change RequestMethod to GET for testing purpose
+     */
+	@RequestMapping(value = "/deleteas", method = RequestMethod.DELETE)
+	public String deleteAS(@RequestParam(value="asname") String ASName) {
+		String asConfigFilePath = this.getClass().getClassLoader()
+				.getResource("asConfig.yaml").getFile();
+		asClients = new ASClients(asConfigFilePath);
+		return asClients.deleteAS(ASName);
+	}
+
 }

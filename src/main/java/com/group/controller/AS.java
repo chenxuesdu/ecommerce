@@ -15,15 +15,18 @@ public class AS {
         /*
          * Before executing AS.main(), please run ELB.main() first
          */
-        String elbConfigFilePath = "C:/D/ecommerce/src/main/java/com/group/controller/asConfig.yaml";
+        String asConfigFilePath = "C:/D/ecommerce/src/main/resources/asConfig.yaml";
         String policyArn;
 
-        ASClients as = new ASClients(elbConfigFilePath);
+        ASClients as = new ASClients(asConfigFilePath);
         as.createConfiguration(as.asConfig.getConfigName(), as.asConfig.getImageID(), as.asConfig.getInstanceType(), as.asConfig.getSecurityGroupName());
         sleep(5000);
         as.createASGroup(as.asConfig.getAsgroupName(), as.asConfig.getConfigName(), as.asConfig.getAvailablityZone(), as.asConfig.getElbName());
         sleep(5000);
-        policyArn = as.setPolicy(as.asConfig.getAsgroupName(), as.asConfig.getPolicyName());
-        as.setAlarm(policyArn, as.asConfig.getAlarmName(), as.asConfig.getAsgroupName());
+        policyArn = as.setPolicy(as.asConfig.getAsgroupName(), as.asConfig.getPolicyName(), 1, "ChangeInCapacity");
+        System.out.println("************************************************************************************************");
+        System.out.println(policyArn);
+        as.setBasicAlarm(policyArn, as.asConfig.getAlarmName(), as.asConfig.getAsgroupName(), "up");
+        as.listAS();
     }
 }
