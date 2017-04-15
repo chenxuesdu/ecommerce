@@ -5,7 +5,7 @@ package com.group.controller;
  */
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -104,7 +104,7 @@ public class ELBv2Clients extends AWSClients{
         createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort()+8000, elbTargetGroupArn.get(1));
 
 
-        createELBRule(elbTargetGroupArn.get(0), elbListenerArn.get(0), "/db/*", 10);
+        createELBRule(elbTargetGroupArn.get(0), elbListenerArn.get(0), "/web/*", 10);
         createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(1), "/web/*", 11);
 
 
@@ -263,7 +263,7 @@ public class ELBv2Clients extends AWSClients{
     *http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/cloudwatch/AmazonCloudWatchClient.html#getMetricStatistics-com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest-
      */
     public Map<String, String> getELBMetricStats(String ELBArn, String ELBTargetGroup, String metricName) {
-        Map<String, String> res = new HashMap<> ();
+        Map<String, String> res = new LinkedHashMap<> ();
         String elbFilter = trimELBArn(ELBArn);
         String tgFilter = trimTgArn(ELBTargetGroup);
         List<Dimension> dimensionList = new ArrayList<>();
@@ -341,7 +341,7 @@ public class ELBv2Clients extends AWSClients{
     }
 
     public Map<String, String> searchELB(String ELBArn) {
-        Map<String, String> ret  = new HashMap<> ();
+        Map<String, String> ret  = new LinkedHashMap<> ();
         DescribeLoadBalancersRequest request = new DescribeLoadBalancersRequest();
         List<String> ELBs = new ArrayList<>();
         ELBs.add(ELBArn);
@@ -355,7 +355,7 @@ public class ELBv2Clients extends AWSClients{
     }
 
     public Map<String, String> listELB() {
-        Map<String, String> ret  = new HashMap<>();
+        Map<String, String> ret  = new LinkedHashMap<>();
 
         DescribeLoadBalancersRequest request = new DescribeLoadBalancersRequest();
         DescribeLoadBalancersResult response = AWSELBClient.describeLoadBalancers(request);

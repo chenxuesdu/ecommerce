@@ -45,7 +45,7 @@ public class ASClients extends AWSClients{
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
             asConfig = mapper.readValue(new File(configFilePath), ASConfig.class);
-            System.out.println(ReflectionToStringBuilder.toString(asConfig,ToStringStyle.MULTI_LINE_STYLE));
+            log.info(ReflectionToStringBuilder.toString(asConfig,ToStringStyle.MULTI_LINE_STYLE));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -81,7 +81,7 @@ public class ASClients extends AWSClients{
      *
      * Create with Classic ELB or Application ELB
      */
-    public void createASGroup(String asgName, String configName, String avZone, String elbName){
+    public void createASGroup(String asgName, String configName, String avZone, String elbName, List<String> tgArnList){
         //asClient.setRegion(usaRegion);
         CreateAutoScalingGroupRequest asgRequest = new CreateAutoScalingGroupRequest();
         asgRequest.setAutoScalingGroupName(asgName);
@@ -97,10 +97,10 @@ public class ASClients extends AWSClients{
         List elbs = new ArrayList();
         elbs.add(elbName);
 
-        List arn = new ArrayList();
-        arn.add("arn:aws:elasticloadbalancing:us-west-2:899396450289:targetgroup/295JavaTargetGroupA/5d2090c7e284c3be");//attach to application elb
+        //List arn = new ArrayList();
+        //arn.add("arn:aws:elasticloadbalancing:us-west-2:899396450289:targetgroup/295JavaTargetGroupA/5d2090c7e284c3be");//attach to application elb
         //asgRequest.setLoadBalancerNames(elbs); //attach to classic elb
-        asgRequest.setTargetGroupARNs(arn);
+        asgRequest.setTargetGroupARNs(tgArnList);
         asgRequest.setHealthCheckType("ELB");
         asgRequest.setHealthCheckGracePeriod(300);
         asgRequest.setDefaultCooldown(600);
@@ -117,7 +117,7 @@ public class ASClients extends AWSClients{
                 .withTargetGroupARNs(targetGroupARN);
         AttachLoadBalancerTargetGroupsResult response = asClient
                 .attachLoadBalancerTargetGroups(request);
-        System.out.println(response.toString());
+        log.info(response.toString());
     }
 
     /*
@@ -163,7 +163,7 @@ public class ASClients extends AWSClients{
         }else if(comparisonOperator.equals("down")){
             upRequest.setComparisonOperator(ComparisonOperator.LessThanThreshold);
         }else{
-            System.out.println("Please input valid scaling strategy.");
+            log.info("Please input valid scaling strategy.");
         }
         upRequest.setStatistic(Statistic.Average);
 
@@ -207,7 +207,7 @@ public class ASClients extends AWSClients{
         }else if(comparisonOperator.equals("down")){
             upRequest.setComparisonOperator(ComparisonOperator.LessThanThreshold);
         }else{
-            System.out.println("Please input valid scaling strategy.");
+            log.info("Please input valid scaling strategy.");
         }
         upRequest.setStatistic(Statistic.Average);
 
@@ -236,9 +236,9 @@ public class ASClients extends AWSClients{
         for(AutoScalingGroup as : ASList){
             res.put(as.getAutoScalingGroupName(), as.getStatus());
         }
-        System.out.println("************************************************************************************************");
+        log.info("************************************************************************************************");
         for(String key : res.keySet()){
-            System.out.println(key);
+            log.info(key);
         }
         return res;
     }
@@ -252,7 +252,7 @@ public class ASClients extends AWSClients{
         DeleteAutoScalingGroupResult response = asClient
                 .deleteAutoScalingGroup(request);
         String res = "DeleteASGroupResult: " + response;
-        System.out.println(res);
+        log.info(res);
 
         return res;
     }

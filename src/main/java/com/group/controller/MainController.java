@@ -158,7 +158,8 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/getelbstats", method = RequestMethod.GET)
-	public Map<String, String> getELBStats(@RequestParam(value="elbarn") String ELBArn, @RequestParam(value="metric", defaultValue = "UnHealthyHostCount") String metricName) {
+	public Map<String, String> getELBStats(@RequestParam(value="elbarn") String ELBArn,
+                                           @RequestParam(value="metric", defaultValue = "UnHealthyHostCount") String metricName) {
 		Map<String, String> ret = new HashMap<>();
 
 		if (elbClients.elbTargetGroupArn.size() > 0 ) {
@@ -245,15 +246,17 @@ public class MainController {
         return ret;
     }
 
-    @RequestMapping(value = "/cleanup", method = RequestMethod.POST)
+    @RequestMapping(value = "/cleanupelbas", method = RequestMethod.DELETE)
     public Map<String, String> cleanUpAll() {
 
         Map<String, String> ret = new HashMap<>();
-        if (elbClients!=null && !elbClients.elbArn.isEmpty()) {
+        if (elbClients!=null && asClients != null && !elbClients.elbArn.isEmpty()) {
             ret.put(elbClients.elbArn, elbClients.deleteELB(elbClients.elbArn));
+            String asName = asClients.asConfig.getAsgroupName();
+            ret.put(asName, deleteAS(asName));
 
             try {
-                Thread.sleep(20000); // Wait until all ec2 instances are up.
+                Thread.sleep(20000); // Wait until elb and listern to clean up.
             } catch (Exception e) {
                 log.error(e);
             }
@@ -300,11 +303,11 @@ public class MainController {
 		asClients.createASGroup(asClients.asConfig.getAsgroupName(),
 				asClients.asConfig.getConfigName(),
 				asClients.asConfig.getAvailablityZone(),
-				asClients.asConfig.getElbName());
+				asClients.asConfig.getElbName(),
+                elbClients.elbTargetGroupArn);
 
 		try {
-			System.out
-					.println("Sleep 5 seconds for creating AS group.");
+			log.info("Sleep 5 seconds for creating AS group.");
 			Thread.sleep(5000); // Wait until all ec2 instances are up.
 		} catch (Exception e) {
 			log.error(e);
@@ -343,5 +346,21 @@ public class MainController {
 		asClients = new ASClients(asConfigFilePath);
 		return asClients.deleteAS(ASName);
 	}
+
+    @RequestMapping(value = "/launchelbas", method = RequestMethod.POST)
+    public Map<String, Map<String, String>> launchELBAS(){
+        Map<String, Map<String, String>> ret = new HashMap<>();
+        log.info("Creating Application Load Balancer, please wait about 3 minutes......");
+
+        Map<String, String> elb = createELB();
+        ret.put("LoadBalancer", elb);
+
+        log.info("Creating Auto Scaling ......");
+
+        Map<String, String> as = createAS();
+        ret.put("AutoScaling", as);
+
+        return ret;
+    }
 
 }
