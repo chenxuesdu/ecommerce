@@ -1,5 +1,7 @@
 package com.group.controller;
 
+import com.amazonaws.services.autoscaling.model.AttachInstancesRequest;
+import com.amazonaws.services.autoscaling.model.AttachInstancesResult;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -277,7 +279,7 @@ public class MainController {
         return ret;
     }
 
-	@RequestMapping(value = "/createas", method = RequestMethod.GET)
+	@RequestMapping(value = "/createas", method = RequestMethod.POST)
 	public Map<String, String> createAS(){
 		int capacity = 1;
 		String comparisonOperator = "up";
@@ -326,7 +328,18 @@ public class MainController {
 	}
 
 	/*
-     * Change RequestMethod to GET for testing purpose
+     * Attach instances with ASGroup
+     */
+	@RequestMapping(value = "/attachins", method = RequestMethod.POST)
+	public String attachInstances(@RequestParam(value="asname") String asgName) {
+		String asConfigFilePath = this.getClass().getClassLoader()
+				.getResource("asConfig.yaml").getFile();
+		asClients = new ASClients(asConfigFilePath);
+		return asClients.attachInstances(asgName);
+	}
+
+	/*
+     * List ASGroup
      */
 	@RequestMapping(value = "/listas", method = RequestMethod.POST)
 	public Map<String, String> listAS() {
@@ -337,7 +350,7 @@ public class MainController {
 	}
 
 	/*
-     * Change RequestMethod to GET for testing purpose
+     * Delete specific ASGroup
      */
 	@RequestMapping(value = "/deleteas", method = RequestMethod.DELETE)
 	public String deleteAS(@RequestParam(value="asname") String ASName) {

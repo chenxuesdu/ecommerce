@@ -21,7 +21,7 @@ public class AS {
         ASClients as = new ASClients(asConfigFilePath);
         as.createConfiguration(as.asConfig.getConfigName(), as.asConfig.getImageID(), as.asConfig.getInstanceType(), as.asConfig.getSecurityGroupName());
         sleep(5000);
-        as.createASGroup(as.asConfig.getAsgroupName(), as.asConfig.getConfigName(), as.asConfig.getAvailablityZone(), as.asConfig.getElbName());
+        //as.createASGroup(as.asConfig.getAsgroupName(), as.asConfig.getConfigName(), as.asConfig.getAvailablityZone(), as.asConfig.getElbName());
         sleep(5000);
         policyArn = as.setPolicy(as.asConfig.getAsgroupName(), as.asConfig.getPolicyName(), 1, "ChangeInCapacity");
         System.out.println("************************************************************************************************");

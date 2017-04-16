@@ -14,6 +14,10 @@ import com.amazonaws.services.cloudwatch.model.*;
 import com.amazonaws.services.autoscaling.*;
 import com.amazonaws.services.autoscaling.model.*;
 
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.ec2.model.Instance;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +34,7 @@ public class ASClients extends AWSClients{
     private static Logger log = Logger.getLogger(ASClients.class);
     private AmazonAutoScalingClient asClient;
     private AmazonCloudWatchClient cloudWatchClient;
+    protected AmazonEC2 AWSEC2Client;
     public ASConfig asConfig;
 
     public ASClients(String configFilePath) {
@@ -118,6 +123,43 @@ public class ASClients extends AWSClients{
         AttachLoadBalancerTargetGroupsResult response = asClient
                 .attachLoadBalancerTargetGroups(request);
         log.info(response.toString());
+    }
+
+    /*
+     * Attach instances with ASGroup
+     * Find running instances with same availabilityZone as ASGroup to attach
+     */
+    public String attachInstances(String asgName){
+        String asConfigFilePath = this.getClass().getClassLoader()
+                .getResource("ec2Config.yaml").getFile();
+        EC2Clients ec2 = new EC2Clients(asConfigFilePath);
+        AWSEC2Client = new AmazonEC2Client(getCredentials());
+        Region usaRegion = Region.getRegion(Regions.US_WEST_2);
+        AWSEC2Client.setRegion(usaRegion);
+
+        ArrayList<String> azFilter = new ArrayList<String>();
+        DescribeInstancesResult response = AWSEC2Client.describeInstances();
+        if(response!=null && response.getReservations()!=null && !response.getReservations().isEmpty()) {
+            for(Reservation reservation: response.getReservations()) {
+                List<com.amazonaws.services.ec2.model.Instance> instances = reservation.getInstances();
+                if(instances!=null && !instances.isEmpty()) {
+                    for(Instance instance: instances) {
+                        System.out.print(instance.getPlacement().getAvailabilityZone().toString());
+                        if(instance.getPlacement().getAvailabilityZone().toString().equals(asConfig.getAvailablityZone())
+                                && instance.getState().getName().equals("running")){
+                            azFilter.add(instance.getInstanceId());
+                        }
+                    }
+                }
+            }
+        }
+        AttachInstancesRequest request = new AttachInstancesRequest()
+                .withAutoScalingGroupName(asgName)
+                .withInstanceIds(azFilter);
+        AttachInstancesResult responseIns = asClient.attachInstances(request);
+        log.info(responseIns.toString());
+        System.out.print(response.toString());
+        return responseIns.toString();
     }
 
     /*
@@ -234,7 +276,7 @@ public class ASClients extends AWSClients{
 
         List<AutoScalingGroup> ASList = response.getAutoScalingGroups();
         for(AutoScalingGroup as : ASList){
-            res.put(as.getAutoScalingGroupName(), as.getStatus());
+            res.put(as.getAutoScalingGroupName(), as.getStatus());//getStatus() can get asStatus while deleting
         }
         log.info("************************************************************************************************");
         for(String key : res.keySet()){
