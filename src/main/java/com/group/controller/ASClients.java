@@ -299,6 +299,16 @@ public class ASClients extends AWSClients{
         return res;
     }
 
+    public String deleteLaunchConfiguration(String lcName) {
+        DeleteLaunchConfigurationRequest request = new DeleteLaunchConfigurationRequest()
+                .withLaunchConfigurationName(lcName);
+        DeleteLaunchConfigurationResult response = asClient
+                .deleteLaunchConfiguration(request);
+        String res = "DeleteLaunchConfiguration: " + lcName + " " + response;
+        log.info(res);
+
+        return res;
+    }
 }
 
 

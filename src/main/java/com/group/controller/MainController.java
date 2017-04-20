@@ -3,16 +3,20 @@ package com.group.controller;
 import com.amazonaws.services.autoscaling.model.AttachInstancesRequest;
 import com.amazonaws.services.autoscaling.model.AttachInstancesResult;
 import com.amazonaws.services.ec2.model.SecurityGroup;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.apache.log4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 
 @RestController
@@ -160,20 +164,20 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/getelbstats", method = RequestMethod.GET)
-	public Map<String, String> getELBStats(@RequestParam(value="elbarn") String ELBArn,
+	public Map<String,Map<String, String>> getELBStats(@RequestParam(value="elbarn") String ELBArn,
                                            @RequestParam(value="metric", defaultValue = "UnHealthyHostCount") String metricName) {
-		Map<String, String> ret = new HashMap<>();
+		Map<String, Map<String, String>> ret = new HashMap<>();
 
 		if (elbClients.elbTargetGroupArn.size() > 0 ) {
-			for (String tn : elbClients.elbTargetGroupArn) {
-				ret = elbClients.getELBMetricStats(ELBArn, tn, metricName);
+			for (String tgArn : elbClients.elbTargetGroupArn) {
+				ret.put(tgArn, elbClients.getELBMetricStats(ELBArn, tgArn, metricName));
 			}
 		}
 		return ret;
 	}
 
 	@RequestMapping(value = "/getelbstatsall", method = RequestMethod.GET)
-	public Map<String, Map<String, String>> getELBStatsAll(@RequestParam(value="elbarn") String ELBArn) {
+	public String getELBStatsAll(@RequestParam(value="elbarn") String ELBArn) {
 		List<String> metricList = new ArrayList<>();
 		metricList.add("ActiveConnectionCount");
 		metricList.add("HealthyHostCount");
@@ -188,18 +192,27 @@ public class MainController {
 		metricList.add("UnHealthyHostCount");
 		metricList.add("ProcessedBytes");
 
-		Map<String, Map<String,String>> ret = new HashMap<>();
+		Map<String,List<Map<String, String>>> ret = new HashMap<>();
+		String json="";
 
 		if (elbClients.elbTargetGroupArn.size() > 0 ) {
-		    for (String metric: metricList) {
-		        Map<String, String> stats = new HashMap<>();
-                for (String tn : elbClients.elbTargetGroupArn) {
-                    stats = elbClients.getELBMetricStats(ELBArn, tn, metric);
+            for (String tgArn : elbClients.elbTargetGroupArn) {
+                List<Map<String,String>> list = new ArrayList<>();
+                for (String metric: metricList) {
+                    Map<String, String> stats = elbClients.getELBMetricStats(ELBArn, tgArn, metric);
+                    if(!stats.isEmpty()) list.add(stats);
                 }
-                ret.put(metric, stats);
+                ret.put(tgArn, list);
             }
 		}
-		return ret;
+
+        try {
+            json = new ObjectMapper().writeValueAsString(ret);
+            log.info(json);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+        }
+		return json;
 	}
 
 	@RequestMapping(value = "/deleteelb", method = RequestMethod.DELETE)
@@ -256,6 +269,7 @@ public class MainController {
             ret.put(elbClients.elbArn, elbClients.deleteELB(elbClients.elbArn));
             String asName = asClients.asConfig.getAsgroupName();
             ret.put(asName, deleteAS(asName));
+            asClients.deleteLaunchConfiguration(asClients.asConfig.getConfigName());
 
             try {
                 Thread.sleep(20000); // Wait until elb and listern to clean up.
@@ -357,6 +371,7 @@ public class MainController {
 		String asConfigFilePath = this.getClass().getClassLoader()
 				.getResource("asConfig.yaml").getFile();
 		asClients = new ASClients(asConfigFilePath);
+
 		return asClients.deleteAS(ASName);
 	}
 

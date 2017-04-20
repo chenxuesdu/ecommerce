@@ -101,11 +101,13 @@ public class ELBv2Clients extends AWSClients{
         registerELBTargets(elbTargetGroupArn.get(1), ec2InstanceList2);
 
         createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort(), elbTargetGroupArn.get(0));
-        createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort()+8000, elbTargetGroupArn.get(1));
+        //createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort()+8000, elbTargetGroupArn.get(1));
 
 
         createELBRule(elbTargetGroupArn.get(0), elbListenerArn.get(0), "/web/*", 10);
-        createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(1), "/web/*", 11);
+        //createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(1), "/web/*", 11);
+        createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(0), "/web/*", 11);
+
 
 
         log.info("CreateELBResult: " + response.toString());
@@ -303,10 +305,10 @@ public class ELBv2Clients extends AWSClients{
 
         if (result.getDatapoints().size() > 0) {
             for (Datapoint point : result.getDatapoints()) {
-                res.put(tgFilter + " " + metricName + " sum", point.getSum().toString());
-                res.put(tgFilter + " " + metricName + " Average", point.getAverage().toString());
-                res.put(tgFilter + " " + metricName + " Maximum", point.getMaximum().toString());
-                res.put(tgFilter + " " + metricName + " Minimum", point.getMinimum().toString());
+                res.put(metricName + " sum", point.getSum().toString());
+                res.put(metricName + " Average", point.getAverage().toString());
+                res.put(metricName + " Maximum", point.getMaximum().toString());
+                res.put(metricName + " Minimum", point.getMinimum().toString());
 
                 log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
                 log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
