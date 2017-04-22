@@ -75,7 +75,7 @@ public class ASClients extends AWSClients{
         lcRequest.setSecurityGroups(securityGroups);
 
         InstanceMonitoring monitoring = new InstanceMonitoring();
-        monitoring.setEnabled(Boolean.FALSE);//set basic monitoring with FALSE
+        monitoring.setEnabled(Boolean.TRUE);//set basic monitoring with FALSE
         lcRequest.setInstanceMonitoring(monitoring);
 
         asClient.createLaunchConfiguration(lcRequest);
@@ -97,7 +97,10 @@ public class ASClients extends AWSClients{
         asgRequest.setAvailabilityZones(avZones);
 
         asgRequest.setMinSize(0);  // disabling it for the moment
-        asgRequest.setMaxSize(0); //  disabling it for the moment
+        asgRequest.setMaxSize(8); //  disabling it for the moment
+        asgRequest.setDesiredCapacity(4);
+
+
 
         List elbs = new ArrayList();
         elbs.add(elbName);
@@ -177,6 +180,13 @@ public class ASClients extends AWSClients{
 
         PutScalingPolicyResult result = asClient.putScalingPolicy(request);
         String arn = result.getPolicyARN(); // You need the policy ARN in the next step so make a note of it.
+
+        EnableMetricsCollectionRequest request1 = new EnableMetricsCollectionRequest()
+                .withAutoScalingGroupName(asgName)
+                .withGranularity("1Minute");
+        EnableMetricsCollectionResult response1 = asClient
+                .enableMetricsCollection(request1);
+
         return arn;
     }
 
@@ -309,6 +319,61 @@ public class ASClients extends AWSClients{
 
         return res;
     }
+
+    public Map<String, String> getASMetricStats(String metricName) {
+        Map<String, String> res = new LinkedHashMap<> ();
+        List<Dimension> dimensionList = new ArrayList<>();
+
+        GetMetricStatisticsRequest request = new GetMetricStatisticsRequest();
+        Dimension dimension = new Dimension();
+        dimension.setName("AS");
+        dimension.setValue("testAS");//ASGroup name
+        dimensionList.add(dimension);
+
+        request.setDimensions(dimensionList);
+
+        Date endTime =  new Date();
+        Date startTime =  new DateTime(endTime).minusMinutes(1).toDate();
+        //To get only 1 minute stats for each metric.
+
+        request.setMetricName(metricName);
+        request.setStartTime(startTime);
+        request.setEndTime(endTime);
+        request.setPeriod(60);
+        request.setNamespace("AWS/AutoScaling");
+
+        List<String> statsList = new ArrayList<>();
+        statsList.add("Sum");
+        statsList.add("Average");
+        statsList.add("Maximum");
+        statsList.add("Minimum");
+
+        request.setStatistics(statsList);
+
+        GetMetricStatisticsResult result = cloudWatchClient.getMetricStatistics(request);
+
+        if (result.getDatapoints().size() > 0) {
+            for (Datapoint point : result.getDatapoints()) {
+                res.put(metricName + " sum", point.getSum().toString());
+                res.put(metricName + " Average", point.getAverage().toString());
+                res.put(metricName + " Maximum", point.getMaximum().toString());
+                res.put(metricName + " Minimum", point.getMinimum().toString());
+
+                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
+                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
+                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
+                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
+            }
+        }
+
+        System.out.println("**********************");
+        for(String v : res.values()){
+            System.out.println(v);
+        }
+        System.out.println(res.keySet());
+        return res;
+    }
+
 }
 
 

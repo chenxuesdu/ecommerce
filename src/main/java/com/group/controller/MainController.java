@@ -391,4 +391,16 @@ public class MainController {
         return ret;
     }
 
+	/*
+     * Get ASGroup metrics, metricsName can be found: http://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/as-metricscollected.html
+     */
+	@RequestMapping(value = "/getasmetric", method = RequestMethod.GET)
+	public void getAsMetrics(@RequestParam(value="metricname") String metricname) {
+//		String asConfigFilePath = this.getClass().getClassLoader()
+//				.getResource("asConfig.yaml").getFile();
+//		asClients = new ASClients(asConfigFilePath);
+		asClients.getASMetricStats(metricname);
+
+	}
+
 }
