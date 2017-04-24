@@ -395,12 +395,40 @@ public class MainController {
      * Get ASGroup metrics, metricsName can be found: http://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/as-metricscollected.html
      */
 	@RequestMapping(value = "/getasmetric", method = RequestMethod.GET)
-	public void getAsMetrics(@RequestParam(value="metricname") String metricname) {
-//		String asConfigFilePath = this.getClass().getClassLoader()
-//				.getResource("asConfig.yaml").getFile();
-//		asClients = new ASClients(asConfigFilePath);
-		asClients.getASMetricStats(metricname);
-
+	public Map<String, String> getAsMetrics(@RequestParam(value="metric") String metricname) {
+		return asClients.getASMetricStats(metricname);
 	}
 
+    @RequestMapping(value = "/getasstatsall", method = RequestMethod.GET)
+    public String getASStatsAll() {
+        List<String> metricList = new ArrayList<>();
+        metricList.add("GroupMinSize");
+        metricList.add("GroupMaxSize");
+        metricList.add("GroupDesiredCapacity");
+        metricList.add("GroupInServiceInstances");
+        metricList.add("GroupPendingInstances");
+        metricList.add("GroupStandbyInstances");
+        metricList.add("GroupTerminatingInstances");
+        metricList.add("GroupTotalInstances");
+
+        Map<String,List<Map<String, String>>> ret = new HashMap<>();
+        String json="";
+
+        if (asClients != null ) {
+            List<Map<String,String>> list = new ArrayList<>();
+            for (String metric: metricList) {
+                Map<String, String> stats = asClients.getASMetricStats(metric);
+                if(!stats.isEmpty()) list.add(stats);
+            }
+            ret.put(asClients.asConfig.getAsgroupName(), list);
+        }
+
+        try {
+            json = new ObjectMapper().writeValueAsString(ret);
+            log.info(json);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+        }
+        return json;
+    }
 }

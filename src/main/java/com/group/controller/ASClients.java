@@ -326,7 +326,7 @@ public class ASClients extends AWSClients{
 
         GetMetricStatisticsRequest request = new GetMetricStatisticsRequest();
         Dimension dimension = new Dimension();
-        dimension.setName("AS");
+        dimension.setName("AutoScalingGroupName");
         dimension.setValue("testAS");//ASGroup name
         dimensionList.add(dimension);
 
@@ -365,12 +365,6 @@ public class ASClients extends AWSClients{
                 log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
             }
         }
-
-        System.out.println("**********************");
-        for(String v : res.values()){
-            System.out.println(v);
-        }
-        System.out.println(res.keySet());
         return res;
     }
 
