@@ -270,6 +270,8 @@ public class MainController {
             String asName = asClients.asConfig.getAsgroupName();
             ret.put(asName, deleteAS(asName));
             asClients.deleteLaunchConfiguration(asClients.asConfig.getConfigName());
+			asClients.deletePolicy(asName,asClients.asConfig.getPolicyName());
+			asClients.deleteAlarm(asClients.asConfig.getAlarmName());
 
             try {
                 Thread.sleep(20000); // Wait until elb and listern to clean up.

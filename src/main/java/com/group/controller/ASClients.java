@@ -300,7 +300,8 @@ public class ASClients extends AWSClients{
      */
     public String deleteAS(String asName) {
         DeleteAutoScalingGroupRequest request = new DeleteAutoScalingGroupRequest()
-                .withAutoScalingGroupName(asName);
+                .withAutoScalingGroupName(asName)
+                .withForceDelete(true);
         DeleteAutoScalingGroupResult response = asClient
                 .deleteAutoScalingGroup(request);
         String res = "DeleteASGroupResult: " + response;
@@ -309,12 +310,43 @@ public class ASClients extends AWSClients{
         return res;
     }
 
+    /*
+     * Delete Policy
+     */
+    public String deletePolicy(String asName, String policyName) {
+        DeletePolicyRequest request = new DeletePolicyRequest()
+                .withAutoScalingGroupName(asName)
+                .withPolicyName(policyName);
+        DeletePolicyResult response = asClient.deletePolicy(request);
+        String res = "DeletePolicyResult: " + response;
+        log.info(res);
+
+        return res;
+    }
+
+    /*
+     * Delete launch configuration
+     */
     public String deleteLaunchConfiguration(String lcName) {
         DeleteLaunchConfigurationRequest request = new DeleteLaunchConfigurationRequest()
                 .withLaunchConfigurationName(lcName);
         DeleteLaunchConfigurationResult response = asClient
                 .deleteLaunchConfiguration(request);
         String res = "DeleteLaunchConfiguration: " + lcName + " " + response;
+        log.info(res);
+
+        return res;
+    }
+
+    /*
+    * Delete launch configuration
+    */
+    public String deleteAlarm(String alarmName) {
+        DeleteAlarmsRequest request = new DeleteAlarmsRequest()
+                .withAlarmNames(alarmName);
+        DeleteAlarmsResult response = cloudWatchClient
+                .deleteAlarms(request);
+        String res = "DeleteAlarm: " + alarmName + " " + response;
         log.info(res);
 
         return res;
