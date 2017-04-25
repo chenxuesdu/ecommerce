@@ -339,7 +339,7 @@ public class ASClients extends AWSClients{
     }
 
     /*
-    * Delete launch configuration
+    * Delete launch cloudwatch Alarm
     */
     public String deleteAlarm(String alarmName) {
         DeleteAlarmsRequest request = new DeleteAlarmsRequest()
