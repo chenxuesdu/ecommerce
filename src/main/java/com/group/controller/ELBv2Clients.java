@@ -18,7 +18,6 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.*;
-//import com.amazonaws.services.elasticloadbalancing.model.*;
 import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancingv2.model.CreateTargetGroupRequest;
@@ -104,9 +103,9 @@ public class ELBv2Clients extends AWSClients{
         //createELBListener(elbConfig.getelbProtocol(), "forward", elbConfig.getelbPort()+8000, elbTargetGroupArn.get(1));
 
 
-        createELBRule(elbTargetGroupArn.get(0), elbListenerArn.get(0), "/web/*", 10);
+        createELBRule(elbTargetGroupArn.get(0), elbListenerArn.get(0), "/", 10);
         //createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(1), "/web/*", 11);
-        createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(0), "/web/*", 11);
+        createELBRule(elbTargetGroupArn.get(1), elbListenerArn.get(0), "/", 11);
 
 
 
