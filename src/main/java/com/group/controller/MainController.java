@@ -208,7 +208,6 @@ public class MainController {
 
         try {
             json = new ObjectMapper().writeValueAsString(ret);
-            log.info(json);
         } catch (JsonProcessingException e) {
             log.error(e);
         }
@@ -427,7 +426,43 @@ public class MainController {
 
         try {
             json = new ObjectMapper().writeValueAsString(ret);
-            log.info(json);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+        }
+        return json;
+    }
+
+    @RequestMapping(value = "/getec2statsall", method = RequestMethod.GET)
+    public String getEC2StatsAll() {
+        Map<String,List<Map<String, String>>> ret = new HashMap<>();
+        String json="";
+
+        List<String> metricList = new ArrayList<>();
+        metricList.add("CPUUtilization");
+        metricList.add("DiskReadOps");
+        metricList.add("DiskWriteOps");
+        metricList.add("DiskReadBytes");
+        metricList.add("DiskWriteBytes");
+        metricList.add("NetworkIn");
+        metricList.add("NetworkOut");
+        metricList.add("NetworkPacketsIn");
+        metricList.add("NetworkPacketsOut");
+
+        if (asClients != null ) {
+            List<String> ec2List = ec2Clients.listInstances(RUNNING_STATUS);
+            List<Map<String,String>> list = new ArrayList<>();
+
+            for (String ec2 : ec2List) {
+                for (String metric : metricList) {
+                    Map<String, String> stats = ec2Clients.getEC2MetricStats(ec2, metric);
+                    if (!stats.isEmpty()) list.add(stats);
+                }
+                ret.put(ec2, list);
+            }
+        }
+
+        try {
+            json = new ObjectMapper().writeValueAsString(ret);
         } catch (JsonProcessingException e) {
             log.error(e);
         }

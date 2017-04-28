@@ -309,10 +309,10 @@ public class ELBv2Clients extends AWSClients{
                 res.put(metricName + " Maximum", point.getMaximum().toString());
                 res.put(metricName + " Minimum", point.getMinimum().toString());
 
-                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
-                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
-                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
-                log.info(tgFilter + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " Sum: " + point.getSum());
+                log.info(tgFilter + " " + metricName + " Average: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " Maximum: " + point.getAverage());
+                log.info(tgFilter + " " + metricName + " Minimum: " + point.getAverage());
             }
         }
         return res;

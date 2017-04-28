@@ -4,12 +4,16 @@ package com.group.controller;
  */
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.lang.*;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import com.amazonaws.services.cloudwatch.model.Datapoint;
+import com.amazonaws.services.cloudwatch.model.Dimension;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
@@ -19,6 +23,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 
 public class EC2Clients extends AWSClients{
@@ -28,6 +33,7 @@ public class EC2Clients extends AWSClients{
 
     protected AmazonEC2 AWSEC2Client;
     public EC2Config ec2Config;
+    public AmazonCloudWatchClient AWSCloudWatchClient;
 
     public EC2Clients(String configFilePath) {
         super();
@@ -35,6 +41,8 @@ public class EC2Clients extends AWSClients{
         AWSEC2Client = new AmazonEC2Client(getCredentials());
         Region usaRegion = Region.getRegion(Regions.US_WEST_2);
         AWSEC2Client.setRegion(usaRegion);
+        AWSCloudWatchClient = new AmazonCloudWatchClient(getCredentials());
+        AWSCloudWatchClient.setRegion(usaRegion);
 
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -431,5 +439,53 @@ public class EC2Clients extends AWSClients{
             }
         }
     }
+
+    public Map<String, String> getEC2MetricStats(String instanceId, String metricName) {
+        Map<String, String> res = new LinkedHashMap<>();
+
+        List<Dimension> dimensionList = new ArrayList<>();
+
+        GetMetricStatisticsRequest request = new GetMetricStatisticsRequest();
+        Dimension dimension = new Dimension();
+        dimension.setName("InstanceId");
+        dimension.setValue(instanceId);
+        dimensionList.add(dimension);
+
+        request.setDimensions(dimensionList);
+
+        Date endTime =  new Date();
+        Date startTime =  new DateTime(endTime).minusMinutes(1).toDate();
+        //To get only 1 minute stats for each metric.
+
+        request.setMetricName(metricName);
+        request.setStartTime(startTime);
+        request.setEndTime(endTime);
+        request.setPeriod(60);
+        request.setNamespace("AWS/EC2");
+
+        List<String> statsList = new ArrayList<>();
+        statsList.add("Sum");
+        statsList.add("Average");
+        statsList.add("Maximum");
+        statsList.add("Minimum");
+
+        request.setStatistics(statsList);
+
+        GetMetricStatisticsResult result = AWSCloudWatchClient.getMetricStatistics(request);
+
+        if (result.getDatapoints().size() > 0) {
+            for (Datapoint point : result.getDatapoints()) {
+                res.put(metricName + " Average", point.getAverage().toString());
+                res.put(metricName + " Maximum", point.getMaximum().toString());
+                res.put(metricName + " Minimum", point.getMinimum().toString());
+
+                log.info(instanceId + " " + metricName + " Average: " + point.getAverage());
+                log.info(instanceId + " " + metricName + " Maximum: " + point.getAverage());
+                log.info(instanceId + " " + metricName + " Minimum: " + point.getAverage());
+            }
+        }
+        return res;
+    }
+
 }
 

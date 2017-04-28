@@ -391,10 +391,10 @@ public class ASClients extends AWSClients{
                 res.put(metricName + " Maximum", point.getMaximum().toString());
                 res.put(metricName + " Minimum", point.getMinimum().toString());
 
-                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Sum: " + point.getSum());
-                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Average: " + point.getAverage());
-                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Maximum: " + point.getAverage());
-                log.info("testAS" + " " + metricName + " at timestamp : " + point.getTimestamp() + " Minimum: " + point.getAverage());
+                log.info("testAS" + " " + metricName + " Sum: " + point.getSum());
+                log.info("testAS" + " " + metricName + " Average: " + point.getAverage());
+                log.info("testAS" + " " + metricName + " Maximum: " + point.getAverage());
+                log.info("testAS" + " " + metricName + " Minimum: " + point.getAverage());
             }
         }
         return res;
