@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-
 
 
 @RestController
@@ -177,7 +175,7 @@ public class MainController {
 	}
 
 	@RequestMapping(value = "/getelbstatsall", method = RequestMethod.GET)
-	public String getELBStatsAll(@RequestParam(value="elbarn") String ELBArn) {
+	public Map<String,List<Map<String, String>>> getELBStatsAll() {
 		List<String> metricList = new ArrayList<>();
 		metricList.add("ActiveConnectionCount");
 		metricList.add("HealthyHostCount");
@@ -195,11 +193,11 @@ public class MainController {
 		Map<String,List<Map<String, String>>> ret = new HashMap<>();
 		String json="";
 
-		if (elbClients.elbTargetGroupArn.size() > 0 ) {
+		if (elbClients!=null && elbClients.elbTargetGroupArn.size() > 0 ) {
             for (String tgArn : elbClients.elbTargetGroupArn) {
                 List<Map<String,String>> list = new ArrayList<>();
                 for (String metric: metricList) {
-                    Map<String, String> stats = elbClients.getELBMetricStats(ELBArn, tgArn, metric);
+                    Map<String, String> stats = elbClients.getELBMetricStats(elbClients.elbArn, tgArn, metric);
                     if(!stats.isEmpty()) list.add(stats);
                 }
                 ret.put(tgArn, list);
@@ -211,7 +209,7 @@ public class MainController {
         } catch (JsonProcessingException e) {
             log.error(e);
         }
-		return json;
+		return ret;
 	}
 
 	@RequestMapping(value = "/deleteelb", method = RequestMethod.DELETE)
@@ -227,7 +225,7 @@ public class MainController {
 	@RequestMapping(value = "/deletetg", method = RequestMethod.DELETE)
 	public Map<String, String> deleteTG() {
 		Map<String, String> ret = new HashMap<>();
-        if (elbClients.elbTargetGroupArn.size() > 0 ) {
+        if (elbClients!=null && elbClients.elbTargetGroupArn.size() > 0 ) {
             for(String tgArn: elbClients.elbTargetGroupArn) {
                 ret.put(tgArn, elbClients.deleteTargetGroup(tgArn));
             }
@@ -401,7 +399,7 @@ public class MainController {
 	}
 
     @RequestMapping(value = "/getasstatsall", method = RequestMethod.GET)
-    public String getASStatsAll() {
+    public Map<String,List<Map<String, String>>> getASStatsAll() {
         List<String> metricList = new ArrayList<>();
         metricList.add("GroupMinSize");
         metricList.add("GroupMaxSize");
@@ -429,11 +427,11 @@ public class MainController {
         } catch (JsonProcessingException e) {
             log.error(e);
         }
-        return json;
+        return ret;
     }
 
     @RequestMapping(value = "/getec2statsall", method = RequestMethod.GET)
-    public String getEC2StatsAll() {
+    public Map<String,List<Map<String, String>>> getEC2StatsAll() {
         Map<String,List<Map<String, String>>> ret = new HashMap<>();
         String json="";
 
@@ -466,6 +464,23 @@ public class MainController {
         } catch (JsonProcessingException e) {
             log.error(e);
         }
+        return ret;
+    }
+
+    @RequestMapping(value = "/monitor", method = RequestMethod.GET)
+    public String monitorELBEC2AS() {
+	    List<Map<String,List<Map<String, String>>>> list = new ArrayList<>();
+	    list.add(getELBStatsAll());
+	    list.add(getEC2StatsAll());
+	    list.add(getASStatsAll());
+
+        String json = "";
+        try {
+            json = new ObjectMapper().writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            log.error(e);
+        }
+
         return json;
     }
 }
