@@ -1,20 +1,22 @@
 package com.group.controller;
 
-import com.amazonaws.services.autoscaling.model.AttachInstancesRequest;
-import com.amazonaws.services.autoscaling.model.AttachInstancesResult;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.apache.log4j.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import com.amazonaws.services.ec2.model.SecurityGroup;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.group.client.ASClients;
+import com.group.client.EC2Clients;
+import com.group.client.ELBv2Clients;
 
 
 @RestController

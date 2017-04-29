@@ -1,18 +1,19 @@
 package com.group.data.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "product")
 public class Product {
 	@Id
-	public int productId;
+	public String id;
 
-	public String puoductName;
+	public String name;
 
-	public String productDesc;
+	public String inventory;
 
-	public float productPrice;
+	public float price;
 
 	public Product() {
 	}
-
 }

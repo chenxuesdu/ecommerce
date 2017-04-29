@@ -1,4 +1,4 @@
-package com.group.controller;
+package com.group.client;
 
 /**
  * Created by ahbbc on 2017/3/16.

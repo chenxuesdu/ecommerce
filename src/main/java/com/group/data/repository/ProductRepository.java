@@ -4,5 +4,5 @@ import com.group.data.model.Product;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface ProductRepository extends MongoRepository<Product, String> {
-	public Product findByProductionId(int productionId);
+	public Product findByName(String name);
 }

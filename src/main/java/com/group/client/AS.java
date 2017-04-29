@@ -1,4 +1,4 @@
-package com.group.controller;
+package com.group.client;
 
 import static java.lang.Thread.sleep;
 

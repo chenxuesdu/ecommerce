@@ -1,4 +1,4 @@
-package com.group.controller;
+package com.group.client;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
