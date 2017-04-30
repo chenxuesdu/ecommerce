@@ -5,22 +5,16 @@ import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "order")
-public class Order {
-
+@Document(collection = "cart")
+public class Cart {
 	@Id
 	public String id;
 
 	public String userId;
 
-	public List<String> productList;
+	public List<String> product;
 
-	public String timestamp;
-
-	public ShippingAddress shippingAddress;
-
-	public float totalPrice;
-
-	public Order() {
+	public Cart() {
 	}
+
 }

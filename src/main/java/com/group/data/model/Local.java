@@ -3,21 +3,15 @@ package com.group.data.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "product")
-public class Product {
+@Document(collection = "local")
+public class Local {
 	@Id
 	public String id;
-
+	public String email;
 	public String name;
+	public String password;
+	public String profilePhoto;
 
-	public String inventory;
-
-	public float price;
-
-	public String[] productPhotos;
-
-	public String description;
-
-	public Product() {
+	public Local() {
 	}
 }

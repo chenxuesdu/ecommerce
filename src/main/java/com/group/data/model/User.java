@@ -1,24 +1,19 @@
 package com.group.data.model;
 
-import java.util.List;
-
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+@Document(collection = "user")
 public class User {
 	@Id
-	public int userId;
+	public int id;
 
-	public String userName;
-
-	public String userEmail;
-
-	public String userPassword;
-
-	public String userAddress;
-	
-	public List<Order> orders;
-	
-	public WishList withList;
+	public String userId;
+	public Admin admin;
+	public Local local;
+	public Google facebook;
+	public Google google;
+	public ShippingAddress shippingInfo;
 
 	public User() {
 	}
