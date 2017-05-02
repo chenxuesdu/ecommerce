@@ -8,6 +8,8 @@ public class Product {
 	@Id
 	public String id;
 
+	public String category;
+
 	public String name;
 
 	public String inventory;
