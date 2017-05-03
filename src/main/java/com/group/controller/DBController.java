@@ -69,6 +69,8 @@ public class DBController {
 		if (result == null) {
 			this.productRepository.save(product);
 		} else {
+			result.category = product.category;
+			result.description = product.description;
 			result.inventory = product.inventory;
 			result.price = product.price;
 			this.productRepository.save(result);
@@ -179,6 +181,19 @@ public class DBController {
 		User user = this.userRepository.findByUserId(userId);
 		return user;
 	}
+
+	/**
+	 * TODO: Get user by field
+	 *
+	 * @param userId
+	 * @return
+	 */
+	@RequestMapping(value = "/user/local/{userId}", method = RequestMethod.GET, produces = "application/json")
+	public User getUserByField(@PathVariable String userId) {
+		User user = this.userRepository.findByUserId(userId);
+		return user;
+	}
+
 
 	/**
 	 * Save or Update userId

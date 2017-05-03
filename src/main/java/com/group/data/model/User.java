@@ -9,10 +9,22 @@ public class User {
 	public int id;
 
 	public String userId;
-	public Admin admin;
-	public Local local;
-	public Google facebook;
-	public Google google;
+
+	// "admin", "local", "google", "facebook"
+	public String type;
+
+	// for Google or Facebook
+	public String token;
+
+	public String email;
+
+	public String name;
+
+	public String profilePhoto;
+
+	// for local or admin
+	public String password;
+
 	public ShippingAddress shippingInfo;
 
 	public User() {

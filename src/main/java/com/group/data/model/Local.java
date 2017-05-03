@@ -9,7 +9,7 @@ public class Local {
 	public String id;
 	public String email;
 	public String name;
-	public String password;
+
 	public String profilePhoto;
 
 	public Local() {
