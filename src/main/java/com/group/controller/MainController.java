@@ -38,7 +38,33 @@ public class MainController {
 		return "Welcome to our ecommerce system!";
 	}
 
-	@RequestMapping(value = "/createelb", method = RequestMethod.POST)
+    @RequestMapping(value = "/createec2", method = RequestMethod.POST)
+    public String createEC2() {
+        String ec2ConfigFilePath = this.getClass().getClassLoader()
+                .getResource("ec2Config.yaml").getFile();
+
+        if (ec2Clients == null) ec2Clients = new EC2Clients(ec2ConfigFilePath);
+
+        List<String> subnetIdList = ec2Clients.getSubnetId();
+
+        String instanceId = "";
+        instanceId= ec2Clients.createEC2Instance(
+                    ec2Clients.ec2Config.getImageID(),
+                    ec2Clients.ec2Config.getInstanceType(),
+                    ec2Clients.ec2Config.getMinInstanceCount(),
+                    ec2Clients.ec2Config.getMaxInstanceCount(),
+                    ec2Clients.ec2Config.getKeyName(),
+                    ec2Clients.ec2Config.getSecurityGroupId(),
+                    subnetIdList.get(0));
+
+        log.info("The newly created ec2 instance has an ID: "
+                    + instanceId);
+        log.info("**********************");
+
+        return instanceId;
+    }
+
+    @RequestMapping(value = "/createelb", method = RequestMethod.POST)
 	public Map<String, String> createELB() {
 
 		Map<String, String> ret = new HashMap<>();
