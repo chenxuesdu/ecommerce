@@ -6,9 +6,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "user")
 public class User {
 	@Id
-	public int id;
+	public String id;
 
-	public String userId;
+	public String secondaryId;
 
 	// "admin", "local", "google", "facebook"
 	public String type;

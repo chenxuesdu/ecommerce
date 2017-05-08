@@ -13,10 +13,12 @@ import com.group.data.model.Cart;
 import com.group.data.model.Order;
 import com.group.data.model.Product;
 import com.group.data.model.User;
+import com.group.data.model.AWS;
 import com.group.data.repository.CartRepository;
 import com.group.data.repository.OrderRepository;
 import com.group.data.repository.ProductRepository;
 import com.group.data.repository.UserRepository;
+import com.group.data.repository.AWSRepository;
 
 @RestController
 @RequestMapping("db")
@@ -34,17 +36,41 @@ public class DBController {
 	@Autowired
 	private UserRepository userRepository;
 
+	@Autowired
+	private AWSRepository awsRepository;
+
 	/**
 	 * Find a product by product name
 	 * 
 	 * @param name
 	 * @return
 	 */
-	@RequestMapping(value = "/product/{name}", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = "/product/name/{name}", method = RequestMethod.GET, produces = "application/json")
 	public Product getProduct(@PathVariable String name) {
 		Product product = this.productRepository.findByName(name);
 		return product;
 	}
+
+	@RequestMapping(value = "/product/id/{id}", method = RequestMethod.GET, produces = "application/json")
+	public Product getProductById(@PathVariable String id) {
+		Product product = this.productRepository.findById(id);
+		return product;
+	}
+
+
+	/**
+	 * Find products with a same category
+	 *
+	 * @param category
+	 * @return
+	 */
+	@RequestMapping(value = "/product/category/{category}", method = RequestMethod.GET, produces = "application/json")
+	public List<Product> getProductByCategory(@PathVariable String category) {
+		List<Product> productList = this.productRepository.findByCategory(category);
+		return productList;
+	}
+
+
 
 	/**
 	 * List all products
@@ -176,21 +202,21 @@ public class DBController {
 	 * @param userId
 	 * @return
 	 */
-	@RequestMapping(value = "/user/local/{userId}", method = RequestMethod.GET, produces = "application/json")
+	@RequestMapping(value = "/user/{userId}", method = RequestMethod.GET, produces = "application/json")
 	public User getUser(@PathVariable String userId) {
-		User user = this.userRepository.findByUserId(userId);
+		User user = this.userRepository.findById(userId);
 		return user;
 	}
 
 	/**
-	 * TODO: Get user by field
-	 *
-	 * @param userId
+	 * Get user by email and type
+	 * @param userEmail
+	 * @param userType
 	 * @return
 	 */
-	@RequestMapping(value = "/user/local/{userId}", method = RequestMethod.GET, produces = "application/json")
-	public User getUserByField(@PathVariable String userId) {
-		User user = this.userRepository.findByUserId(userId);
+	@RequestMapping(value = "/user/{userEmail}/{userType}", method = RequestMethod.GET, produces = "application/json")
+	public User getUserByField(@PathVariable String userEmail, @PathVariable String userType) {
+		User user = this.userRepository.findByEmailAndType(userEmail, userType);
 		return user;
 	}
 
@@ -202,13 +228,13 @@ public class DBController {
 	 * @return
 	 */
 	@RequestMapping(value = "/user/save", method = RequestMethod.POST, consumes = "application/json")
-	public int saveUser(@RequestBody User user) {
-		User u = this.userRepository.findByUserId(user.userId);
+	public String saveUser(@RequestBody User user) {
+		User u = this.userRepository.findById(user.id);
 		if (u != null) {
 			user.id = u.id;
 		}
 		this.userRepository.save(user);
-		return 0;
+		return user.id;
 	}
 
 	/**
@@ -221,4 +247,27 @@ public class DBController {
 		this.userRepository.delete(id);
 	}
 
+	/**
+	 * Find all aws info
+	 * @return
+	 */
+	@RequestMapping(value="/aws", method = RequestMethod.GET, produces = "application/json")
+	public List<AWS> getAWS() {
+		List<AWS> allAWSConfig = this.awsRepository.findAll();
+		return allAWSConfig;
+	}
+
+	/**
+	 * Find all aws info
+	 * @return
+	 */
+	@RequestMapping(value="/aws", method = RequestMethod.POST, consumes = "application/json")
+	public String saveAWS(@RequestBody AWS aws) {
+		AWS a = this.awsRepository.findById(aws.id);
+		if (a != null) {
+			aws.id = a.id;
+		}
+		this.awsRepository.save(aws);
+		return aws.id;
+	}
 }
