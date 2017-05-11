@@ -1,7 +1,7 @@
 name: AWS EC2 config
-securityGroupId: sg-81d7f5f9
+securityGroupId: sg-23088158 #sg-81d7f5f9
 region: US_WEST_2
-imageID: ami-5e63d13e
-keyName: cmpe295
+imageID: ami-de6cf6be
+keyName: 295_test_oregon_key_pair #cmpe295
 minInstanceCount: 1
 maxInstanceCount: 1

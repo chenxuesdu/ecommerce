@@ -1,6 +1,8 @@
 package com.group.controller;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,15 +48,19 @@ public class DBController {
 	 * @return
 	 */
 	@RequestMapping(value = "/product/name/{name}", method = RequestMethod.GET, produces = "application/json")
-	public Product getProduct(@PathVariable String name) {
+	public List<Product> getProduct(@PathVariable String name) {
 		Product product = this.productRepository.findByName(name);
-		return product;
+		List<Product> list = new ArrayList<>();
+		list.add(product);
+		return list;
 	}
 
 	@RequestMapping(value = "/product/id/{id}", method = RequestMethod.GET, produces = "application/json")
-	public Product getProductById(@PathVariable String id) {
-		Product product = this.productRepository.findById(id);
-		return product;
+	public List<Product> getProductById(@PathVariable String id) {
+		Product product = this.productRepository.findById(id).get();
+		List<Product> list = new ArrayList<>();
+		list.add(product);
+		return list;
 	}
 
 
@@ -91,15 +97,16 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/product/save", method = RequestMethod.POST, consumes = "application/json")
 	public int saveProduct(@RequestBody Product product) {
-		Product result = this.getProduct(product.name);
+		List<Product> result = this.getProduct(product.name);
 		if (result == null) {
 			this.productRepository.save(product);
 		} else {
-			result.category = product.category;
-			result.description = product.description;
-			result.inventory = product.inventory;
-			result.price = product.price;
-			this.productRepository.save(result);
+			// update
+			result.get(0).category = product.category;
+			result.get(0).description = product.description;
+			result.get(0).inventory = product.inventory;
+			result.get(0).price = product.price;
+			this.productRepository.save(result.get(0));
 		}
 		return 0;
 	}
@@ -111,7 +118,10 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/product/delete/{id}", method = RequestMethod.DELETE)
 	public void delete(@PathVariable String id) {
-		this.productRepository.delete(id);
+		Product product = this.productRepository.findById(id).get();
+		if (product != null) {
+			this.productRepository.delete(product);
+		}
 	}
 
 	/**
@@ -122,7 +132,7 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/order/save", method = RequestMethod.POST, consumes = "application/json")
 	public int saveOrder(@RequestBody Order order) {
-		Order o = this.orderRepository.getById(order.id);
+		Order o = this.orderRepository.findById(order.id).get();
 		if (o != null) {
 			order.id = o.id;
 		}
@@ -137,9 +147,11 @@ public class DBController {
 	 * @return
 	 */
 	@RequestMapping(value = "/order/{uerId}", method = RequestMethod.GET, produces = "application/json")
-	public Order getOrder(@PathVariable String userId) {
-		Order order = this.orderRepository.getByUserId(userId);
-		return order;
+	public List<Order> getOrder(@PathVariable String userId) {
+		Order order = this.orderRepository.findByUserId(userId);
+		List<Order> list = new ArrayList<>();
+		list.add(order);
+		return list;
 	}
 
 	/**
@@ -155,7 +167,10 @@ public class DBController {
 
 	@RequestMapping(value = "/order/delete/{id}", method = RequestMethod.DELETE)
 	public void deleteOrder(@PathVariable String id) {
-		this.orderRepository.delete(id);
+		Order order = this.orderRepository.findById(id).get();
+		if (order != null) {
+			this.orderRepository.delete(order);
+		}
 	}
 
 	/**
@@ -164,10 +179,12 @@ public class DBController {
 	 * @param userId
 	 * @return
 	 */
-	@RequestMapping(value = "/cart/{uerId}", method = RequestMethod.GET, produces = "application/json")
-	public Cart getCart(@PathVariable String userId) {
+	@RequestMapping(value = "/cart/{userId}", method = RequestMethod.GET, produces = "application/json")
+	public List<Cart> getCart(@PathVariable String userId) {
 		Cart cart = this.cartRepositry.findByUserId(userId);
-		return cart;
+		List<Cart> list = new ArrayList<>();
+		list.add(cart);
+		return list;
 	}
 
 	/**
@@ -193,19 +210,25 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/cart/delete/{id}", method = RequestMethod.DELETE)
 	public void deleteCart(@PathVariable String id) {
-		this.cartRepositry.delete(id);
+		Cart cart = this.cartRepositry.findByUserId(id);
+		if (cart != null) {
+			this.cartRepositry.delete(cart);
+		}
 	}
 
 	/**
 	 * Get user by userId
-	 * 
+	 *
 	 * @param userId
 	 * @return
 	 */
 	@RequestMapping(value = "/user/{userId}", method = RequestMethod.GET, produces = "application/json")
-	public User getUser(@PathVariable String userId) {
-		User user = this.userRepository.findById(userId);
-		return user;
+	public List<User> getUser(@PathVariable String userId) {
+		User user = this.userRepository.findById(userId).get();
+		List<User> list = new ArrayList<>();
+		list.add(user);
+		return list;
+		/**/
 	}
 
 	/**
@@ -215,9 +238,23 @@ public class DBController {
 	 * @return
 	 */
 	@RequestMapping(value = "/user/{userEmail}/{userType}", method = RequestMethod.GET, produces = "application/json")
-	public User getUserByField(@PathVariable String userEmail, @PathVariable String userType) {
+	public List<User> getUserByField(@PathVariable String userEmail, @PathVariable String userType) {
 		User user = this.userRepository.findByEmailAndType(userEmail, userType);
-		return user;
+		List<User> list = new ArrayList<>();
+		list.add(user);
+		return list;
+	}
+
+	@RequestMapping(value = "/user/all", method = RequestMethod.GET, produces = "application/json")
+	public List<User> getUserByField() {
+		List<User> list = this.userRepository.findAll();
+		for (int i = 0; i < list.size(); i++) {
+			if (list.get(i).type.equals("admin")) {
+				User admin = list.get(i);
+				list.remove(admin);
+			}
+		}
+		return list;
 	}
 
 
@@ -229,7 +266,7 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/user/save", method = RequestMethod.POST, consumes = "application/json")
 	public String saveUser(@RequestBody User user) {
-		User u = this.userRepository.findById(user.id);
+		User u = this.userRepository.findById(user.id).get();
 		if (u != null) {
 			user.id = u.id;
 		}
@@ -244,7 +281,10 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/user/delete/{id}", method = RequestMethod.DELETE)
 	public void deleteUser(@PathVariable String id) {
-		this.userRepository.delete(id);
+		User user = this.userRepository.findById(id).get();
+		if (user != null) {
+			this.userRepository.delete(user);
+		}
 	}
 
 	/**
@@ -263,7 +303,7 @@ public class DBController {
 	 */
 	@RequestMapping(value="/aws", method = RequestMethod.POST, consumes = "application/json")
 	public String saveAWS(@RequestBody AWS aws) {
-		AWS a = this.awsRepository.findById(aws.id);
+		AWS a = this.awsRepository.findById(aws.id).get();
 		if (a != null) {
 			aws.id = a.id;
 		}

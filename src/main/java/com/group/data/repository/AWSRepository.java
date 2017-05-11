@@ -3,6 +3,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.group.data.model.AWS;
 
+import java.util.Optional;
+
 public interface AWSRepository extends MongoRepository<AWS, String> {
-    public AWS findById(String id);
+    public Optional<AWS> findById(String id);
 }

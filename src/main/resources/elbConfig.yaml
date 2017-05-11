@@ -7,7 +7,7 @@ targetGroupName:
   - 295JavaTargetGroupA
   - 295JavaTargetGroupB
 securityGroupName:
-  - 295JavaSecurityGroup
+  - my-test
 availablityZone:
   - us-west-2a
   - us-west-2b

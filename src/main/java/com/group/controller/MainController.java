@@ -465,10 +465,10 @@ public class MainController {
 
         List<String> metricList = new ArrayList<>();
         metricList.add("CPUUtilization");
-        metricList.add("DiskReadOps");
-        metricList.add("DiskWriteOps");
-        metricList.add("DiskReadBytes");
-        metricList.add("DiskWriteBytes");
+//        metricList.add("DiskReadOps");
+//        metricList.add("DiskWriteOps");
+//        metricList.add("DiskReadBytes");
+//        metricList.add("DiskWriteBytes");
         metricList.add("NetworkIn");
         metricList.add("NetworkOut");
         metricList.add("NetworkPacketsIn");
