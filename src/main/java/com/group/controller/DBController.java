@@ -98,7 +98,8 @@ public class DBController {
 	@RequestMapping(value = "/product/save", method = RequestMethod.POST, consumes = "application/json")
 	public int saveProduct(@RequestBody Product product) {
 		List<Product> result = this.getProduct(product.name);
-		if (result == null) {
+		System.out.println("************" + result.get(0));
+		if (result == null || result.size() == 0 || result.get(0) == null) {
 			this.productRepository.save(product);
 		} else {
 			// update
@@ -266,12 +267,19 @@ public class DBController {
 	 */
 	@RequestMapping(value = "/user/save", method = RequestMethod.POST, consumes = "application/json")
 	public String saveUser(@RequestBody User user) {
-		User u = this.userRepository.findById(user.id).get();
-		if (u != null) {
-			user.id = u.id;
+		System.out.println("+++++++++" + user.id);
+		if (user.id == null) {
+			this.userRepository.save(user);
+			return user.id;
+		} else {
+			User u = this.userRepository.findById(user.id).get();
+			if (u != null) {
+				user.id = u.id;
+			}
+			this.userRepository.save(user);
+			return user.id;
 		}
-		this.userRepository.save(user);
-		return user.id;
+
 	}
 
 	/**

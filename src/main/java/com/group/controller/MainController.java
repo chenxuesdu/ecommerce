@@ -5,7 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.group.data.model.AWS;
+import com.group.data.repository.AWSRepository;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +24,9 @@ import com.group.client.ELBv2Clients;
 
 @RestController
 public class MainController {
+	@Autowired
+	private AWSRepository awsRepository;
+
 	public static boolean ELBExist = false;
 	public List<String> ec2List;
 	public ELBv2Clients elbClients;
@@ -162,6 +168,10 @@ public class MainController {
 				ELBExist = true;
 			}
 		}
+
+		AWS aws = awsRepository.findAll().get(0);
+		aws.arn = elbClients.elbArn;
+		awsRepository.save(aws);
 
 		ret.put("ELBDNS", elbClients.elbDNSName);
 		ret.put("ELBArn", elbClients.elbArn);

@@ -1,6 +1,7 @@
 package com.group.client;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.AmazonClientException;
 
@@ -17,7 +18,8 @@ public abstract class AWSClients {
 
     public AWSClients() {
         try {
-            credentials = new ProfileCredentialsProvider().getCredentials();
+            //credentials = new ProfileCredentialsProvider().getCredentials();
+            credentials = new BasicAWSCredentials("AKIAJXB4FEIN3KZRWZLQ", "1T49gJaSVMrY2K91hZ0rxlOcM1n0348k1mTplUGT");
         } catch (Exception e) {
             throw new AmazonClientException(
                     "Cannot load the credentials from the credential profiles file. " +
